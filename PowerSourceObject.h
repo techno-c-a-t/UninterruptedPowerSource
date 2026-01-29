@@ -19,7 +19,7 @@ public:
     // состояния блокировки и выхода
     State OutState = State::DISABLED, LockState = State::DISABLED;
     ConstantValue Mode = ConstantValue::VOLTAGE;
-    //конструктор инициализирует порт
+    //конструктор инициализирует порт по умолчанию com5
     PowerSource():Port("COM5") //Port(new ComfPort("COM5"))
     {};
 

@@ -3,6 +3,7 @@ __history
 __recovery
 .vscode
 Win32
+Win64
 PowerSourceObjectTests
 До перехода на PowerSourceObject
 До начала логгирования

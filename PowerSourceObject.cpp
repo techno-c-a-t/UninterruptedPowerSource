@@ -26,7 +26,8 @@ bool PowerSource::Connect(std::string comPort)
 {
 bool success = Port.Open(comPort);
 if(success) 
-{Sleep(1500);
+{
+Sleep(100);
 return SetLock(1);}
 else return 0;
 }; 
