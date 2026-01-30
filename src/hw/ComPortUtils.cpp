@@ -461,7 +461,10 @@ std::string ComfPort::Read(size_t DataLength) noexcept
         return "";
     }
     bool ans;
-    win_api_port::debug("Reding " + std::to_string(DataLength) + " bytes in " + std::format("{:#x}", reinterpret_cast<uintptr_t>(readBuffer)));
+    std::stringstream ss;
+    ss << std::hex << std::showbase << reinterpret_cast<uintptr_t>(readBuffer);
+    std::string result = ss.str();
+    win_api_port::debug("Reding " + std::to_string(DataLength) + " bytes in " + result);
     try
     {
         ans = win_api_port::ReadFromComPort(hMyComPort, readBuffer, DataLength, &bytesRead);
