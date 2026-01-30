@@ -1,6 +1,10 @@
-﻿#include <string> // Для std::to_string
+﻿#include <algorithm>    // std::transform
+#include <string>       // Для std::to_string
 #include <stdexcept>    // Для std::runtime_error и базового std::exception
-#include <system_error>  // Для std::system_error, std::error_code и std::errc
+#include <system_error> // Для std::system_error, std::error_code и std::errc
+#include <cctype>
+#include <sstream> // sstringstream
+#include <iomanip> // для полученя адреса как строки
 #pragma hdrstop
 #include "ComPortUtils.h" // Если используете отдельный .h
 #include "ComPortUtilsLogging.h"
@@ -33,7 +37,8 @@ HANDLE win_api_port::OpenComPort(const ComPortSettings &settings)
     std::string fullPortName = settings.PortName;
     // Преобразование PortName к верхнему регистру для сравнения
     std::string portNameUpper = settings.PortName;
-    // std::transform(portNameUpper.begin(), portNameUpper.end(), portNameUpper.begin(), ::toupper);
+    std::transform(portNameUpper.begin(), portNameUpper.end(), portNameUpper.begin(), [](unsigned char c)
+                   { return std::toupper(c); });
 
     // Для COM10 и выше нужен префикс "\\\\.\\"
     // Проверяем, что начинается с "COM" и длина > 4 ("COMx")
@@ -172,7 +177,7 @@ bool win_api_port::WriteToComPort(HANDLE hCom, const char *data, DWORD dataSize,
 bool win_api_port::ReadFromComPort(HANDLE hCom, char *buffer, DWORD bufferSize, DWORD *bytesRead)
 {
     *bytesRead = 0;
-    // ShowMessage("In function ReadFromComPort came Buffer with size " +  AnsiString(strlen(buffer))+ " and DWORD bufferSize is "+ AnsiString(bufferSize));
+    // win_api_port::error("In function ReadFromComPort came Buffer with size " +  std::string(strlen(buffer))+ " and DWORD bufferSize is "+ std::string(bufferSize));
     if (!ReadFile(hCom, buffer, bufferSize, bytesRead, NULL))
     {
         DWORD dwError = GetLastError();
@@ -201,7 +206,7 @@ bool win_api_port::ReadFromComPort(HANDLE hCom, char *buffer, DWORD bufferSize, 
     return true; // Возвращаем true, даже если прочитано 0 байт (таймаут)
 }
 
-ComfPort::ComfPort(std::string portName, bool createOpened)
+ComfPort::ComfPort(std::string portName, bool createOpened) noexcept
 {
     // Можно добавить запрос других настроек (BaudRate и т.д.)
     settings.BaudRate = CBR_9600; // Пример
@@ -218,8 +223,10 @@ ComfPort::~ComfPort()
     Close();
 }
 
-// Пытается открыть порт, ловит std::exception, возвращает 1 или 0
-bool ComfPort::Open(std::string portN)
+// Пытается открыть порт, ловит ComPortError, std::exception, и все что угодно
+// при попытке поткрыть порт. возвращает 1 или 0.
+// Можно открывать открытый порт, ничего не произойдет (по идее)
+bool ComfPort::Open(std::string portN) noexcept
 {
     if (portN != "")
         settings.PortName = portN;
@@ -229,7 +236,7 @@ bool ComfPort::Open(std::string portN)
         {
             hMyComPort = win_api_port::OpenComPort(settings);
             Opened = 1;
-            // ShowMessage("COM port " +UnicodeString(settings.PortName.c_str()) + " opened successfully.");
+            // win_api_port::trace("COM port " +UnicodeString(settings.PortName.c_str()) + " opened successfully.");
             return 1;
         }
         catch (const win_api_port::ComPortError &ex)
@@ -242,16 +249,28 @@ bool ComfPort::Open(std::string portN)
             win_api_port::error("Standard Error while opening: " + std::string(ex.what()));
             return 0;
         }
+        catch (...)
+        {
+            win_api_port::critical("Other error in ComfPort::Open. It is not std::exception");
+            return 0;
+        }
     }
     else
         return 1;
     return 0;
 }
+
+// Делает 10 попыток закрыть порт, в промежутках слип на 10 мс. Если за 10 не получилось, бросает
+//  throw std::system_error(
+//      std::::make_error_code(std::errc::io_error),
+//      "Failed to close port after 10 attempts"
+//   );
 bool ComfPort::Close()
 {
+    int i = 0;
     while (Opened)
     {
-        int i = 0;
+
         try
         {
             if (hMyComPort != INVALID_HANDLE_VALUE)
@@ -268,14 +287,14 @@ bool ComfPort::Close()
         }
         catch (const std::exception &ex)
         {
-            win_api_port::debug("Standard Error while closing: " + std::string(ex.what())+ "\nRetrying");
+            win_api_port::debug("Standard Error while closing: " + std::string(ex.what()) + "\nRetrying");
         }
         if (i++ > 10)
         {
             win_api_port::critical("Can't close opened port. Port not closed yet. Operation of closing terminated after 10 attempts");
             throw std::system_error(
-            std::make_error_code(std::errc::io_error), 
-            "Failed to close port after 10 attempts"); // Ваш доп. текст
+                std::make_error_code(std::errc::io_error),
+                "Failed to close port after 10 attempts");
             return 0;
         };
         Sleep(10);
@@ -283,125 +302,192 @@ bool ComfPort::Close()
     return 0;
 }
 
-//Дальше не проверял код!!
-
-
-bool ComfPort::Write(std::string arg) // должно менять bytesWritten, но пока что не сделано
+// Отправляет arg.length() байт, без добавления \0. noexcept. Проверяет, что порт открыт. Если длина строки 0 то сразу возвращет 1
+bool ComfPort::Write(std::string arg) noexcept
 {
-
+    bytesWritten = 0;
     if (!Opened)
     {
-        ShowMessage("Port not opened.");
+        win_api_port::error("Port not opened.");
         return 0;
     }
-    short length = arg.length();
-    char *buffer = new char[length + 1];
-    for (int i = 0; i < length; i++)
-        buffer[i] = arg[i];
-    buffer[length] = '\0';
+
+    if (arg.length() == 0)
+    {
+        win_api_port::debug("In ComfPortWrite (std::string) length of string is 0, returning 1");
+        return 1;
+    }
     bool ans;
-    bytesWritten = static_cast<DWORD>(0);
-    logfile.nestLevel++;
+    win_api_port::debug("Sending as string: " + arg);
     try
     {
-        ans = WriteToComPort(hMyComPort, buffer, static_cast<DWORD>(length + 2), &bytesWritten);
+        ans = win_api_port::WriteToComPort(hMyComPort, arg.c_str(), static_cast<DWORD>(arg.length()), &bytesWritten);
     }
-    catch (const ComPortError &ex)
+    catch (const win_api_port::ComPortError &ex)
     {
-        ShowMessage("COM Port Error whille writing: " + AnsiString(ex.what()));
-        logfile.log(std::string("Writing string failed. Message: ") + std::string(buffer) + std::string(" error") + std::string(ex.what()));
-        logfile.nestLevel--;
+        win_api_port::error("COM Port Error whille writing: " + std::string(ex.what()));
+        win_api_port::debug(
+            std::string("Writing string failed. Message: \n") + arg +
+            std::string(" \nError\n") + std::string(ex.what()) +
+            "\nBytes written: " + std::to_string(bytesWritten));
         return 0;
     }
     catch (const std::exception &ex)
     {
-        ShowMessage("Standard Error while writing: " + AnsiString(ex.what()));
-        logfile.log(std::string("Writing string failed. Message: ") + std::string(buffer) + std::string(" error") + std::string(ex.what()));
-        logfile.nestLevel--;
+        win_api_port::error("Standard Error while writing: " + std::string(ex.what()));
+        win_api_port::debug(
+            std::string("Writing string failed. Message:\n") + arg +
+            std::string("\nerror\n") + std::string(ex.what()));
         return 0;
     }
-    logfile.log(std::string("Wrote: ") + std::string(buffer));
-    logfile.nestLevel--;
+    catch (...)
+    {
+        win_api_port::critical("Other error in ComfPort::Write. It is not std::exception");
+        return 0;
+    }
+    win_api_port::debug(std::string("Wrote: ") + std::to_string(bytesWritten));
     return ans;
 }
 
-bool ComfPort::Write(char *arg, int dataSize)
+// пишет DataSize байт насичная с указателя arg. не кидает ошибку нуллпоинтера или закрытого потра, просто возвращает 0.
+// Обрабатывает только ComPortError и std::exception
+bool ComfPort::Write(char *arg, size_t dataSize)
 {
+    bytesWritten = 0;
     if (!Opened)
     {
-        ShowMessage("Port not opened");
+        win_api_port::error("Port not opened");
         return 0;
     }
-    if (dataSize = -1)
-        dataSize = strlen(arg);
-    char *buffer = new char[dataSize + 1];
+    if (arg == nullptr)
+    {
+        win_api_port::error("Attempt to write " + std::to_string(dataSize) + " bytes from nullptr");
+        return 0;
+    }
+    std::string information = "Sending as bytes: ";
     for (int i = 0; i < dataSize; i++)
-        buffer[i] = arg[i];
-    buffer[dataSize] = '\0';
-    // ShowMessage("Sending:");
-    // for(int i = 0; i<dataSize;i++)  ShowMessage(int(buffer[i]));
+        information += std::to_string(static_cast<unsigned>(arg[i])) + " ";
+    win_api_port::debug(information);
     bool ans;
-    bytesWritten = static_cast<DWORD>(0);
-    logfile.nestLevel++;
     try
     {
-        ans = WriteToComPort(hMyComPort, buffer, static_cast<DWORD>(dataSize + 2), &bytesWritten);
+        ans = win_api_port::WriteToComPort(hMyComPort, arg, static_cast<DWORD>(dataSize), &bytesWritten);
     }
-    catch (const ComPortError &ex)
+    catch (const win_api_port::ComPortError &ex)
     {
-        ShowMessage("COM Port Error whille writing: " + AnsiString(ex.what()));
-        logfile.log(std::string("Writing string failed. Message: ") + std::string(buffer) + std::string(" error") + std::string(ex.what()));
-        logfile.nestLevel--;
+        win_api_port::error("COM Port Error whille writing: " + std::string(ex.what()));
+        win_api_port::debug(std::string("Writing bytes failed. Message:\n") + std::string(arg) + std::string("\nComPortError:\n") + std::string(ex.what()));
         return 0;
     }
     catch (const std::exception &ex)
     {
-        ShowMessage("Standard Error while writing: " + AnsiString(ex.what()));
-        logfile.log(std::string("Writing string failed. Message: ") + std::string(buffer) + std::string(" error") + std::string(ex.what()));
-        logfile.nestLevel--;
+        win_api_port::error("Standard Error while writing: " + std::string(ex.what()));
+        win_api_port::debug(std::string("Writing bytes failed. Message:\n") + std::string(arg) + std::string("\nstd::exception:\n") + std::string(ex.what()));
         return 0;
     }
-    logfile.log(std::string("Wrote: ") + std::string(buffer));
-    logfile.nestLevel--;
+    win_api_port::debug(std::string("Wrote: ") + std::string(arg));
     return ans;
 }
-bool ComfPort::Read(char *readBuffer, int DataLength)
+
+// Читает DataLength байт из порта или считает DataLength из буффера, если DataLength = 0.
+//  Проверяет readBuffer на nullptr и что порт открыт. ловит std::exception и comporterror
+bool ComfPort::Read(char *readBuffer, size_t DataLength)
 {
-    if (!Opened)
+    bytesRead = 0;
+    if (readBuffer == nullptr)
     {
-        ShowMessage("Port not opened");
+        win_api_port::error("Attempt to read " + std::to_string(DataLength) + " bytes from nullptr");
         return 0;
     }
-    if (DataLength == -1)
-        DataLength = strlen(readBuffer);
+    if (!Opened)
+    {
+        win_api_port::error("Port not opened");
+        return 0;
+    }
+    if (DataLength == 0)
+    {
+        win_api_port::debug("DataLength is 0 in Read(char* ) function. return 0 ");
+        return 0;
+    }
     bool ans;
-    // if(DataLength = 0)  DataLength = sizeof(readBuffer);
-    // std::cout<<"Data length is "<<DataLength<<std::endl;
-    // ShowMessage("In ComfPort::Read DataLength is " + AnsiString(DataLength));
-    bytesRead = static_cast<DWORD>(0);
-    logfile.nestLevel++;
+    std::stringstream ss;
+    ss << std::hex << std::showbase << reinterpret_cast<uintptr_t>(readBuffer);
+    std::string result = ss.str();
+    win_api_port::debug("Reding " + std::to_string(DataLength) + " bytes in " + result);
     try
     {
-        ans = ReadFromComPort(hMyComPort, readBuffer, DataLength, &bytesRead);
-        // ShowMessage("Receiving");
-        // for(int i = 0; i<DataLength; i++)	ShowMessage(int(readBuffer[i]));
+        ans = win_api_port::ReadFromComPort(hMyComPort, readBuffer, DataLength, &bytesRead);
+        // win_api_port::debug("Receiving");
+        // for(int i = 0; i<DataLength; i++)	win_api_port::debug(int(readBuffer[i]));
     }
-    catch (const ComPortError &ex)
+    catch (const win_api_port::ComPortError &ex)
     {
-        ShowMessage("COM Port Error whille reading: " + AnsiString(ex.what()));
-        logfile.log(std::string("Reading string failed. Error") + std::string(ex.what()));
-        logfile.nestLevel--;
+        win_api_port::error("COM Port Error whille reading: " + std::string(ex.what()));
         return 0;
     }
     catch (const std::exception &ex)
     {
-        ShowMessage("Standard Error while reading: " + AnsiString(ex.what()));
-        logfile.log(std::string("Reading string failed. Error") + std::string(ex.what()));
-        logfile.nestLevel--;
+        win_api_port::error("Standard Error while reading: " + std::string(ex.what()));
         return 0;
     }
-    // for(int i = 0; i< strlen(readBuffer); i++)  ShowMessage(int(readBuffer[i]));
-    logfile.log(std::string("Read: ") + std::string(readBuffer));
-    logfile.nestLevel--;
+    win_api_port::debug(std::string("Was read: ") + std::string(readBuffer));
     return ans;
+}
+
+// Читает DataLength байт из порта в буфер, а затем делает из буфера std::string
+//  Проверяет new на exception и что порт открыт.
+// ловит std::exception,  comporterror и все остальное. noexcept.
+std::string ComfPort::Read(size_t DataLength) noexcept
+{
+    bytesRead = 0;
+    if (!Opened)
+    {
+        win_api_port::error("Port not opened");
+        return "";
+    }
+    if (DataLength == 0)
+    {
+        win_api_port::debug("DataLength is 0 in Read - noexcept function. Returning");
+        return "";
+    }
+    char *readBuffer;
+    try
+    {
+        readBuffer = new char[DataLength];
+    }
+    catch (...)
+    {
+        win_api_port::critical("New dropped error in Read-noexcept. Probably out of memory.");
+        return "";
+    }
+    bool ans;
+    win_api_port::debug("Reding " + std::to_string(DataLength) + " bytes in " + std::format("{:#x}", reinterpret_cast<uintptr_t>(readBuffer)));
+    try
+    {
+        ans = win_api_port::ReadFromComPort(hMyComPort, readBuffer, DataLength, &bytesRead);
+        // win_api_port::debug("Receiving");
+        // for(int i = 0; i<DataLength; i++)	win_api_port::debug(int(readBuffer[i]));
+    }
+    catch (const win_api_port::ComPortError &ex)
+    {
+        win_api_port::error("COM Port Error whille reading: " + std::string(ex.what()));
+        delete[] readBuffer;
+        return "";
+    }
+    catch (const std::exception &ex)
+    {
+        win_api_port::error("Standard Error while reading: " + std::string(ex.what()));
+        delete[] readBuffer;
+        return "";
+    }
+    catch (...)
+    {
+        win_api_port::error("Not-derrived from std::exception error while reading.");
+        delete[] readBuffer;
+        return "";
+    }
+    std::string ans_str(readBuffer, bytesRead);
+    win_api_port::debug(std::string("Was read: ") + ans_str);
+    delete[] readBuffer;
+    return ans_str;
 }
