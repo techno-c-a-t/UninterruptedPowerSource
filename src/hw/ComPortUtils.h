@@ -7,31 +7,13 @@
 // #include <iostream>  // Для вывода в консоль
 // #include <vector>    // Для буфера чтения, если нужно
 #pragma hdrstop
-#include "Logging.h"
+#include "src/utils/common_namespace.h"
+
 
 namespace win_api_port
 {
+    using namespace utils;
     // НЕЙРОКОД начался
-    // Структура для хранения параметров порта
-    struct ComPortSettings
-    {
-        std::string PortName; // "COM1", "COM2", etc.
-        DWORD BaudRate;       // CBR_9600, CBR_115200, etc.
-        BYTE ByteSize;        // 4-8
-        BYTE Parity;          // NOPARITY, ODDPARITY, EVENPARITY, MARKPARITY, SPACEPARITY
-        BYTE StopBits;        // ONESTOPBIT, ONE5STOPBITS, TWOSTOPBITS
-
-        // Конструктор по умолчанию
-        ComPortSettings() : PortName("COM1"),
-                            BaudRate(CBR_9600),
-                            ByteSize(8),
-                            Parity(NOPARITY),
-                            StopBits(ONESTOPBIT)
-        {
-        }
-    };
-    Logger logfile;
-
     // Класс исключения для ошибок COM-порта
     class ComPortError : public std::runtime_error
     {
@@ -57,8 +39,9 @@ namespace win_api_port
 class ComfPort
 {
     // моё
+    
 public:
-    win_api_port::ComPortSettings settings; // стркутура настроек порта
+    utils::ComPortSettings settings; // стркутура настроек порта
     HANDLE hMyComPort = INVALID_HANDLE_VALUE; // Дескрипотор порта
     DWORD bytesWritten;
     DWORD bytesRead;

@@ -1,112 +1,121 @@
-#ifndef PS_ENGINE_H
-#define PS_ENGINE_H
+#ifndef ENGINE_H
+#define ENGINE_H
 
 #include <vector>
 #include <string>
 #include <chrono>
 #include <array>
 #include <deque>
-#include "src/PS/PowerSourceObject.h"
+#include "src/PS/PowerSourceObject.h" 
+#include "src/utils/timer.h" 
+#include "src/utils/common_namespace.h"         
+
+// Включает замер времени выполнения каждой команды
+#define ENABLE_PROFILING 1
 
 // === НАСТРОЙКИ ===
-enum class EngineMode {
-    FAST,       // 1 попытка. Ошибка -> удаляем команду.
-    STABLE,     // 3 попытки для критических, 1 для обычных.
-    PRECISE     // Бесконечные попытки пока не выполнится.
+enum class EngineMode
+{
+    FAST,   // 1 попытка. Ошибка -> удаляем команду.
+    STABLE, // 3 попытки для критических, 1 для обычных.
+    PRECISE // Бесконечные попытки для критических. Обычные ждут. Потом бесконечные для обычных
 };
 
-enum class CommandID : int {
-    CMD_NONE = -1,
-    CMD_SET_VOLTAGE = 0,
-    CMD_SET_CURRENT = 1,
-    CMD_SET_OUTPUT = 2,
-    CMD_SET_LOCK = 3,
-    CMD_CONNECT = 4,
-    CMD_DISCONNECT = 5,
-    // Телеметрия не кладется в очередь, она фоновая
-    CMD_COUNT = 6 
+enum class CommandID : uint8_t
+{
+    CMD_NONE = 0,
+    CMD_SET_VOLTAGE = 1,
+    CMD_SET_CURRENT = 2,
+    CMD_SET_OUTPUT = 3,
+    CMD_SET_LOCK = 4,
+    CMD_CONNECT = 5,      
+    CMD_DISCONNECT = 6,
+    CMD_GET_VOLTAGE = 7, 
+    CMD_GET_CURRENT = 8,
+    
+    CMD_COUNT = 9 
 };
 
 // === СТРУКТУРЫ ДАННЫХ ===
 
-// "Умная" команда. Хранится в единственном экземпляре.
-struct CommandSlot {
-    float payload;      // Значение (V, A, или 1.0/0.0 для bool)
-    bool isQueued;      // Флаг: уже стоит в очереди на отправку?
-    bool isCritical;    // Критичная ли это команда (Connect, Output)
-    int retryCount;     // Сколько раз уже пытались
+struct CommandSlot
+{
+    float payload;   // Значение (V, A, 1.0/0.0)
+    bool isCritical; // true -> идет в highQueue
+    bool isQueued;   // Есть ли комманду уже в очереди (не добавляем второй раз)
+    int retryCount;  // Счетчик попыток для STABLE режима
 };
 
-// Структура ошибки для кольцевого буфера
-struct RuntimeError {
-    size_t tick;
+struct RuntimeError
+{
     CommandID cmdId;
     std::string message;
-    long long durationUs; // Время попытки в мкс
+    size_t tick;
+    unsigned durationUs; // 0, если профилирование выключено
+    uint64_t timestamp;  // Абсолютное время (start_time)
 };
 
-// Кольцевой буфер ошибок
-class ErrorLogBuffer {
+class ErrorLogBuffer
+{
 private:
     std::vector<RuntimeError> buffer;
     size_t head = 0;
     bool full = false;
+
 public:
     explicit ErrorLogBuffer(size_t size = 50) : buffer(size) {}
-    
-    void push(size_t tick, CommandID cmd, const std::string& msg, long long duration) {
-        buffer[head] = {tick, cmd, msg, duration};
-        head = (head + 1) % buffer.size();
-        full = full || (head == 0);
-    }
-    
-    // Возвращает копию всех ошибок (от старых к новым)
+
+    void push(CommandID cmd, const std::string &msg, size_t tick, unsigned duration, uint64_t timestamp);
     std::vector<RuntimeError> getAll() const;
 };
 
 // === КЛАСС ДВИЖКА ===
 
-class PSEngine {
+class PSEngine
+{
 private:
     PowerSource device;
     EngineMode currentMode = EngineMode::STABLE;
-    
-    // Реестр команд (здесь хранятся актуальные значения)
-    std::array<CommandSlot, (int)CommandID::CMD_COUNT> commandRegistry;
-    
-    // Очередь исполнения (хранит только ID команд)
-    // std::deque позволяет эффективно удалять с обоих концов
-    std::deque<CommandID> executionQueue;
 
-    // История ошибок
+    // Реестр команд
+    std::array<CommandSlot, static_cast<int>(CommandID::CMD_COUNT)> commandRegistry;
+
+    // Очереди исполнения (хранят только ID)
+    std::deque<CommandID> queue;      // Обычные (напряжение, ток)
+    std::deque<CommandID> highQueue;  // Критические (Connect, Output, Lock)
+
+    // Логирование
     ErrorLogBuffer errorLog;
     size_t currentTick = 0;
 
-    // Кэш для UI
+    // Кэш и Телеметрия
     float cachedVoltage = 0.0f;
     float cachedCurrent = 0.0f;
-    bool telemetryToggle = false; // Чередование V/I
+    
+    // Время последнего успешного обновления кэша (микросекунды с эпохи)
+    uint64_t lastVoltageUpdate = 0;
+    uint64_t lastCurrentUpdate = 0;
+
+    bool askVoltage = true; // Чередование опроса
+    std::string targetPortName; // Храним имя порта для Connect ?? Он же уже есть в ComPort
 
     // Внутренние методы
     bool ExecuteCommand(CommandID id);
-    void HandleError(CommandID id, const std::string& msg, long long duration);
+    void PSEngine::ReportError(CommandID id, const std::string &msg, unsigned duration = 0, uint64_t start_time = 0);
+
+    // Шаблонный метод для добавления в очередь (реализован в cpp или header)
+    void UpdateSlot(CommandID id, float val);
 
 public:
     PSEngine();
 
-    // === API УПРАВЛЕНИЯ (Неблокирующее) ===
-    
-    // Если команда уже в очереди -> обновляет значение.
-    // Если нет -> обновляет значение и добавляет в очередь.
+    // === API УПРАВЛЕНИЯ ===
     void SetTargetVoltage(float v);
     void SetTargetCurrent(float a);
-    
-    // bool кастуем в float (1.0f / 0.0f)
-    void SetOutput(bool enabled);
     void SetLock(bool enabled);
+    void SetOutput(bool enabled);
     
-    // Критические команды
-    void Connect(const std::string& port);
+    void Connect(const std::string &port);
     void Disconnect();
 
     // === ГЛАВНЫЙ ЦИКЛ ===
@@ -115,11 +124,14 @@ public:
     // === ГЕТТЕРЫ ===
     float GetLastVoltage() const { return cachedVoltage; }
     float GetLastCurrent() const { return cachedCurrent; }
-    bool IsConnected() const { return static_cast<bool>(device.GetConnectionState()); }
     
-    // Получить дамп ошибок для UI
+    // Время последнего обновления (можно использовать для подсветки "тухлых" данных в UI)
+    uint64_t GetVoltageAgeUs() const;
+    uint64_t GetCurrentAgeUs() const;
+
+    bool IsConnected() const { return device.GetConnectionState() == utils::State::ENABLED; }
+
     std::vector<RuntimeError> GetErrors() { return errorLog.getAll(); }
-    
     void SetMode(EngineMode mode) { currentMode = mode; }
 };
 

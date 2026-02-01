@@ -1,21 +1,17 @@
 #ifndef POWERSOURCEOBJECT_H
 #define POWERSOURCEOBJECT_H
 #include "src/hw/ComPortUtils.h"
+#include "src/utils/common_namespace.h"
 #include "PSO_log.h"
 
 class PowerSource // не должен бросать исключения, только ошибки в коммандную строку
 {
+    using State = utils::State;
+    using Mode = utils::Mode;
+
+    using enum utils::State;
+    using enum utils::Mode;
 public:
-    enum class State
-    {
-        DISABLED = 0,
-        ENABLED = 1
-    };
-    enum class Mode
-    {
-        VOLTAGE,
-        CURRENT
-    };
 
     // конструктор, инициализирует порт по умолчанию com5
     // Port(init_port);
