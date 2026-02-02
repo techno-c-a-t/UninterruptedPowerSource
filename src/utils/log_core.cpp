@@ -2,53 +2,74 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include "log_core.h"
+#include "log_core.h" // Убедись, что имя файла верное (LoggerCore.h или log_core.h)
+#ifndef IS_BUILDER
+    #define IS_BUILDER 0
+#endif
 
 namespace logger_internal {
-    // Функция для получения пути к лог-файлу рядом с .exe
+
+    // Кэш и настройки
+    std::vector<std::string> log_cache;
+
     std::string get_log_path() {
-#if IS_BUILDER
-        char path[MAX_PATH];
-        GetModuleFileNameA(NULL, path, MAX_PATH);
-        std::string s_path = path;
-        return s_path.substr(0, s_path.find_last_of("\\/")) + "\\session_log.txt";
-#endif
-        return "log.txt";
+        // Для консольного теста файл создается в той же папке, откуда запускаешь exe
+        return "log.txt"; 
     }
 
     void flush_to_disk() {
-#if IS_BUILDER
         if (log_cache.empty()) return;
+        // Используем ios::app (дозапись)
         std::ofstream f(get_log_path(), std::ios::app);
-        for (const auto& line : log_cache) f << line << "\n";
-        f.close();
+        if (f.is_open()) {
+            for (const auto& line : log_cache) f << line << "\n";
+            f.close();
+        }
         log_cache.clear();
-#endif
     }
 
     void dispatch(const std::string& ns, const std::string& level_name, const std::string& msg, Priority priority) {
         std::string full_msg = "[" + ns + "][" + level_name + "] " + msg;
 
-#if IS_BUILDER
-        // Логика для Билдера: всё что ниже Error (0, 1, 2) — в кеш и файл
-        if (static_cast<Priority>(priority) >= Priority::P_ERROR) {
-            log_cache.push_back(full_msg);
-            if (log_cache.size() >= CACHE_MAX_SIZE) flush_to_disk();
-        } 
-        // Error и Critical тоже пишем, но сразу (не кешируем для надежности)
-        else {
-            std::ofstream f(get_log_path(), std::ios::app);
-            f << "[IMMEDIATE]" << full_msg << std::endl;
-        }
-        // В Билдере всегда дублируем в Debug Window (внизу среды)
-        OutputDebugStringA((full_msg + "\n").c_str());
-#else
-        // Логика для VS Code / Консоли
-        if (static_cast<Priority>(priority) >= Priority::P_ERROR) {
+        // --- Ветка для КОНСОЛЬНОГО ТЕСТА (Makefile) ---
+#if !IS_BUILDER
+        // Пишем и в консоль, и в файл (чтобы наверняка)
+        if (priority >= Priority::P_ERROR) {
             std::cerr << full_msg << std::endl;
         } else {
             std::cout << full_msg << std::endl;
         }
+        
+        // Пишем в файл мгновенно (для тестов кэш только мешает)
+        std::ofstream f(get_log_path(), std::ios::app);
+        if (f.is_open()) {
+            f << full_msg << std::endl;
+        }
+
+        // --- Ветка для C++ BUILDER (GUI) ---
+#else
+        // 1. Критические ошибки и просто Ошибки - ПИШЕМ СРАЗУ
+        // (Исправили логику: важные вещи не должны висеть в памяти)
+        if (priority >= Priority::P_ERROR) {
+            // Сначала сбросим то, что накопилось в кэше
+            flush_to_disk();
+            
+            // Теперь запишем ошибку
+            std::ofstream f(get_log_path(), std::ios::app);
+            if (f.is_open()) {
+                f << "[IMMEDIATE] " << full_msg << std::endl;
+            }
+        } 
+        // 2. Дебаг, Трейс, Варнинги - В КЭШ
+        else {
+            log_cache.push_back(full_msg);
+            if (log_cache.size() >= CACHE_MAX_SIZE) {
+                flush_to_disk();
+            }
+        }
+        
+        // В Билдере дублируем в окно отладки (внизу IDE)
+        OutputDebugStringA((full_msg + "\n").c_str());
 #endif
     }
 }
