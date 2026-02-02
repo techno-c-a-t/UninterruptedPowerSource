@@ -3,7 +3,7 @@
 
 // === Реализация ErrorLogBuffer ===
 
-void ErrorLogBuffer::push(CommandID cmd, const std::string &msg, size_t tick, unsigned duration, uint64_t timestamp)
+void PSEngine::ErrorLogBuffer::push(CommandID cmd, const std::string &msg, size_t tick, unsigned duration, uint64_t timestamp)
 {
     buffer[head] = {cmd, msg, tick, duration, timestamp};
     head = (head + 1) % buffer.size();
@@ -11,17 +11,17 @@ void ErrorLogBuffer::push(CommandID cmd, const std::string &msg, size_t tick, un
         full = true;
 }
 
-std::vector<RuntimeError> ErrorLogBuffer::getAll() const
+std::vector<PSEngine::RuntimeError> PSEngine::ErrorLogBuffer::getAll() const
 {
     std::vector<RuntimeError> result;
-    result.reserve(buffer.size());
-    if (full)
-    {
-        for (size_t i = head; i < buffer.size(); ++i)
-            result.push_back(buffer[i]);
+    size_t count = full ? buffer.size() : head;
+    result.reserve(count);
+
+    if (full) {
+        for (size_t i = head; i < buffer.size(); ++i) result.push_back(buffer[i]);
     }
-    for (size_t i = 0; i < head; ++i)
-        result.push_back(buffer[i]);
+    for (size_t i = 0; i < head; ++i) result.push_back(buffer[i]);
+    
     return result;
 }
 
@@ -40,7 +40,6 @@ PSEngine::PSEngine()
 
     // Назначаем критические команды (идут в highQueue)
     commandRegistry[(int)CommandID::CMD_SET_OUTPUT].isCritical = true;
-    commandRegistry[(int)CommandID::CMD_SET_LOCK].isCritical = true;
     commandRegistry[(int)CommandID::CMD_CONNECT].isCritical = true;
     commandRegistry[(int)CommandID::CMD_DISCONNECT].isCritical = true;
 }
@@ -56,7 +55,9 @@ void PSEngine::UpdateSlot(CommandID id, float val)
 
     // 2. Если уже в очереди - выходим (значение мы обновили выше)
     if (commandRegistry[idx].isQueued)
+    {
         return;
+    }
 
     // 3. Добавляем в нужную очередь
     commandRegistry[idx].isQueued = true;
@@ -102,7 +103,6 @@ void PSEngine::Disconnect()
 {
     UpdateSlot(CommandID::CMD_DISCONNECT, 0.0f);
 }
-
 // === Логика исполнения ===
 
 void PSEngine::Tick()
@@ -129,25 +129,11 @@ void PSEngine::Tick()
     {
 
         // --- ЗАМЕР ВРЕМЕНИ (Если включен) ---
-        uint64_t start_ts = 0;
-#ifdef ENABLE_PROFILING
         Timer t;
-        auto start_clock = std::chrono::steady_clock::now();
-        start_ts = std::chrono::duration_cast<std::chrono::microseconds>(start_clock.time_since_epoch()).count();
         t.start();
-#endif
-
         bool success = ExecuteCommand(idToExec);
-
-#ifdef ENABLE_PROFILING
-        unsigned duration = static_cast<unsigned>(t.stop());
-#else
-        unsigned duration = 0;
-#endif
-        // ------------------------------------
-
+        unsigned duration = static_cast<unsigned>(t.check());
         int idx = static_cast<int>(idToExec);
-
         if (success)
         {
             // Успех: удаляем из очереди
@@ -165,61 +151,71 @@ void PSEngine::Tick()
             ReportError(idToExec, "Exec failed", duration);
 
             bool drop = false;
-
+            std::string current_mode = "";
             if (currentMode == EngineMode::FAST)
             {
                 drop = true; // Сразу выкидываем
+                current_mode = "FAST";
             }
             else if (currentMode == EngineMode::STABLE)
             {
                 // Критическим даем 3 попытки
                 int maxRetries = commandRegistry[idx].isCritical ? 3 : 1;
                 if (commandRegistry[idx].retryCount >= maxRetries)
+                {
                     drop = true;
+                } else {
+ // Выходим, так как больше ничего делать не надо, а так же не нужна ротация, которя будет выполнена если не выйти тут
+                    return;                }
+                current_mode = "STABLE";
             }
             else if (currentMode == EngineMode::PRECISE)
             {
-                // Критические долбим до победного (drop = false)
-                // Обычные дропаем после 1 попытки, чтобы не забивать очередь (или можно тоже держать)
-                if (!commandRegistry[idx].isCritical)
-                    drop = true;
+                drop = false; // он и так фолз, но это для наглядности
+                current_mode = "PRECISE";
             }
 
             if (drop)
             {
                 commandRegistry[idx].isQueued = false;
                 if (isHighPrio)
+                {
                     highQueue.pop_front();
+                }
                 else
+                {
                     queue.pop_front();
-                ReportError(idToExec, "Dropped (Max Retries)", duration);
+                }
+                ReportError(idToExec, "Dropped (Max Retries) in mode " + current_mode, duration, t.checkS().start);
             }
-            else if (currentMode == EngineMode::PRECISE && isHighPrio)
+            else
             {
-                // Убираем из головы и засовываем в хвост, чтобы в следующем тике
-                // попробовать другую критическую команду
-                highQueue.pop_front();
-                highQueue.push_back(idToExec);
-                pso_logic::debug("Precise Mode: Command " + std::to_string((int)idToExec) + " failed, rotated to back.");
+                // Ротация: перемещаем в конец очереди, чтобы не стопорить поток
+                if (isHighPrio)
+                {
+                    highQueue.pop_front();
+                    highQueue.push_back(idToExec);
+                }
+                else
+                {
+                    queue.pop_front();
+                    queue.push_back(idToExec);
+                }
+
+                pso_logic::warning(
+                    current_mode + "Mode: Command " +
+                    std::to_string((int)idToExec) +
+                    " failed, rotated to back.");
             }
-            // Если drop == false, команда остается в head очереди и повторится в следующий тик
         }
-        return; // В этом тике больше ничего не делаем (одна команда записи за тик)
+        return;
     }
 
-    // 3. Если команд нет - Фоновая телеметрия (Round Robin)
-    // ... в самом конце Tick() ...
-    if (IsConnected())
+    // 3. Если команд нет - Фоновая телеметрия
+    if (Connected())
     {
-        // ПРАВКА 2: Замер времени телеметрии
         Timer t_telemetry;
-#ifdef ENABLE_PROFILING
         t_telemetry.start();
-#endif
-
-        auto now = std::chrono::steady_clock::now();
-        uint64_t nowUs = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count();
-
         float val = -1.0f;
         CommandID currentPollId = askVoltage ? CommandID::CMD_GET_VOLTAGE : CommandID::CMD_GET_CURRENT;
 
@@ -229,7 +225,7 @@ void PSEngine::Tick()
             if (val >= 0)
             {
                 cachedVoltage = val;
-                lastVoltageUpdate = nowUs;
+                lastVoltageUpdate = t_telemetry.checkS().now;
             }
         }
         else
@@ -238,12 +234,12 @@ void PSEngine::Tick()
             if (val >= 0)
             {
                 cachedCurrent = val;
-                lastCurrentUpdate = nowUs;
+                lastCurrentUpdate = t_telemetry.checkS().now;
             }
         }
 
 #ifdef ENABLE_PROFILING
-        unsigned duration = static_cast<unsigned>(t_telemetry.stop());
+        unsigned duration = static_cast<unsigned>(t_telemetry.check());
         if (val >= 0)
         {
             // Логируем успех с временем
@@ -287,6 +283,10 @@ bool PSEngine::ExecuteCommand(CommandID id)
         return device.Setup(targetPortName); // Используем сохраненное имя
     case CommandID::CMD_DISCONNECT:
         return device.Disconnect();
+    case CommandID::CMD_GET_VOLTAGE:
+        return device.GetVoltage() >= 0;
+    case CommandID::CMD_GET_CURRENT:
+        return device.GetCurrent() >= 0;
     default:
         return false;
     }

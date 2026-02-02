@@ -12,7 +12,7 @@
 #include <System.SysUtils.hpp> // Для StrToIntDef
 #include <queue>
 #pragma hdrstop
-#include "UPSource.h"
+#include "src/core/engine.h"
 #include "PowerSourceObject.h"
 #include "DataProcessing.cpp"
 
@@ -38,17 +38,11 @@
 // NOT interface
 //---------------------------------------------------------------------------
 
-struct command
-{
-    int index = 0;
-    float value = 0;
-};
 
-PowerSource UPS;
-AnsiString receivedData = "";
+
+PSEngine engine;
 TForm1 *Form1;
 std::deque<float> voltageData = {}; // resize(n, value); push_back(val); pop_front();
-std::queue<command> commandQueue = {};
 long emulatedTime = 100; // эмуляция времени
 bool timerStarted = 1;
 
@@ -301,7 +295,6 @@ void __fastcall TForm1::ScrollBar2Change(TObject *Sender)
 /**
  * @brief По таймеру добавляет случайную точку на график и управляет размером очереди данных.
  */
-bool currentWasRequested = 0;
 void __fastcall TForm1::Timer1Timer(TObject *Sender)
 {
     /*addPointToVoltageGraphic(rand()*1.0/1000);
@@ -319,53 +312,8 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
     } // иначе попытка чтения сразу после комманды открыть вход
     if (UPS.Port.Opened == 0)
         return;
-    if (commandQueue.empty())
-    {
-        if (currentWasRequested)
-        {
-            float tmp = UPS.GetVoltage();
-            if (tmp < 0)
-                tmp = 0;
-            voltageValue->Caption = FormatFloat(tmp);
-            currentWasRequested = 0;
-        }
-        else
-        {
-            float tmp = UPS.GetCurrent();
-            if (tmp < 0)
-                tmp = 0;
-            currentValue->Caption = FormatFloat(tmp);
-            currentWasRequested = 1;
-        }
-    }
-    else
-    {
-        command toDo = commandQueue.front();
-        int success = 0;
-        switch (toDo.index)
-        {
-        case 1:
-            success = UPS.SetVoltage(toDo.value);
-            break;
-        case 3:
-            success = UPS.SetCurrent(toDo.value);
-            timerStarted = 1;
-            break;
-        case 7:
-        case 8:
-            success = UPS.SetOut(!(toDo.value == 0.0f));
-            break;
-        default:
-            if (!commandQueue.empty())
-                commandQueue.pop();
-            break;
-        }
-        // Label5->Caption = success;
-        if (success && (!commandQueue.empty()))
-            commandQueue.pop();
-    }
-    Label5->Caption = bool(UPS.Mode);
-    if (UPS.Mode == ConstantValue::VOLTAGE)
+
+    if (engine.IsVoltageStab)
     {
         Label13->Visible = False;
         Label14->Visible = True;
@@ -373,7 +321,7 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
         Label4->Font->Color = clBlack;
         Label3->Font->Color = clRed;
     }
-    if (UPS.Mode == ConstantValue::CURRENT)
+    else
     {
         Label14->Visible = False;
         Label13->Visible = True;
