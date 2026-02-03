@@ -5,11 +5,11 @@ namespace win_api_port {
     using namespace logger_internal;
 
     inline bool trace(const std::string& stat) noexcept {
-        dispatch("PORT", "TRACE", stat, Priority::P_TRACE);
+        // dispatch("PORT", "TRACE", stat, Priority::P_TRACE);
         return true;
     }
     inline bool debug(const std::string& inf) noexcept {
-        dispatch("PORT", "DEBUG", inf, Priority::P_DEBUG);
+        // dispatch("PORT", "DEBUG", inf, Priority::P_DEBUG);
         return true;
     }
     inline bool warning(const std::string& warn) noexcept {

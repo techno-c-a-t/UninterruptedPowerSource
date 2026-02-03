@@ -1,4 +1,4 @@
-#ifndef POWERSOURCEOBJECT_H
+﻿#ifndef POWERSOURCEOBJECT_H
 #define POWERSOURCEOBJECT_H
 #include "src/hw/ComPortUtils.h"
 #include "src/utils/common_namespace.h"
@@ -8,9 +8,9 @@ class PowerSource // не должен бросать исключения, то
 {
     using State = utils::State;
     using Mode = utils::Mode;
-
-    using enum utils::State;
-    using enum utils::Mode;
+// С++ Builder не тянет
+//    using enum utils::State;
+//    using enum utils::Mode;
 public:
 
     // конструктор, инициализирует порт по умолчанию com5

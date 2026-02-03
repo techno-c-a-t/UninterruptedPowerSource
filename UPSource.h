@@ -53,7 +53,6 @@ __published:	// IDE-managed Components
     TLabel *Label9;
     TLabel *Label10;
     TLabel *Label11;
-    TTimer *Timer2;
     TLabel *Label5;
     TLabel *Label6;
     TLabel *Label12;
@@ -65,10 +64,13 @@ __published:	// IDE-managed Components
     TLabel *Label14;
     TStringGrid *StringGrid1;
     TStringGrid *StringGrid2;
-    //NOT INTERFACE
-    void __fastcall handleDisconnection();
-    void __fastcall handleConnection();
+    TButton *Button3;
+    TButton *Button4;
+    TLabel *powerValue;
+    TLabel *Label15;
+
     void __fastcall PopulateComPorts();
+    void __fastcall requestVAUpdate(bool forceUpdate);
     //INTERFACE
     void __fastcall Button1Click(TObject *Sender);
     void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
@@ -81,13 +83,13 @@ __published:	// IDE-managed Components
     void __fastcall Label8Click(TObject *Sender);
     void __fastcall ButtonRefreshPortsClick(TObject *Sender);
     void __fastcall ComboBoxComPortsChange(TObject *Sender);
-    void __fastcall Timer2Timer(TObject *Sender);
-    void __fastcall Button2Click(TObject *Sender);
     void __fastcall Edit9Exit(TObject *Sender);
     void __fastcall Edit9KeyDown(TObject *Sender, WORD &Key, TShiftState Shift);
     void __fastcall Edit8Exit(TObject *Sender);
     void __fastcall Edit8KeyDown(TObject *Sender, WORD &Key, TShiftState Shift);
     void __fastcall StringGrid1KeyDown(TObject *Sender, WORD &Key, TShiftState Shift);
+    void __fastcall Button2Click(TObject *Sender);
+    void __fastcall Button4Click(TObject *Sender);
 
 
 
@@ -100,7 +102,9 @@ public:		// User declarations
     int TopLeftY;     // Y-координата верхнего левого угла ячейки (0,0) относительно StringGrid
     int CellHeight;   // Высота ячейки (0,0)
     bool IsValid;     // Флаг, указывающий, удалось ли получить информацию
+
 };
+    bool disableHandlers = false;
 };
 //---------------------------------------------------------------------------
 extern PACKAGE TForm1 *Form1;

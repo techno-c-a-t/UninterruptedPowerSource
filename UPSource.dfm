@@ -2,14 +2,15 @@ object Form1: TForm1
   Left = 0
   Top = 0
   Caption = 'PowerSource interface'
-  ClientHeight = 700
-  ClientWidth = 1832
+  ClientHeight = 488
+  ClientWidth = 1297
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -27
   Font.Name = 'Segoe UI'
   Font.Style = []
+  Position = poDesigned
   Scaled = False
   OnClose = FormClose
   OnCreate = FormCreate
@@ -156,6 +157,43 @@ object Form1: TForm1
     Margins.Right = 5
     Margins.Bottom = 5
     Caption = 'C.V.'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -27
+    Font.Name = 'Segoe UI'
+    Font.Style = [fsBold]
+    ParentFont = False
+  end
+  object powerValue: TLabel
+    Left = 91
+    Top = 349
+    Width = 256
+    Height = 37
+    Margins.Left = 5
+    Margins.Top = 5
+    Margins.Right = 5
+    Margins.Bottom = 5
+    AutoSize = False
+    BiDiMode = bdRightToLeft
+    Caption = 'powerValue'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -27
+    Font.Name = 'Segoe UI'
+    Font.Style = [fsBold]
+    ParentBiDiMode = False
+    ParentFont = False
+  end
+  object Label15: TLabel
+    Left = 369
+    Top = 349
+    Width = 27
+    Height = 37
+    Margins.Left = 5
+    Margins.Top = 5
+    Margins.Right = 5
+    Margins.Bottom = 5
+    Caption = 'W'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
     Font.Height = -27
@@ -560,13 +598,12 @@ object Form1: TForm1
       'SPPS3001D')
   end
   object Button2: TButton
-    Left = 478
-    Top = 568
-    Width = 92
-    Height = 72
-    Caption = 'Button2'
+    Left = 39
+    Top = 197
+    Width = 152
+    Height = 52
+    Caption = 'DropErrors'
     TabOrder = 16
-    Visible = False
     OnClick = Button2Click
   end
   object StringGrid1: TStringGrid
@@ -586,6 +623,7 @@ object Form1: TForm1
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goDrawFocusSelected, goEditing, goFixedRowDefAlign]
     ScrollBars = ssNone
     TabOrder = 17
+    Visible = False
     OnKeyDown = StringGrid1KeyDown
   end
   object StringGrid2: TStringGrid
@@ -604,18 +642,37 @@ object Form1: TForm1
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goDrawFocusSelected, goEditing, goFixedRowDefAlign]
     ScrollBars = ssVertical
     TabOrder = 18
+    Visible = False
     OnKeyDown = StringGrid1KeyDown
   end
+  object Button3: TButton
+    Left = 1932
+    Top = 12
+    Width = 113
+    Height = 38
+    Margins.Left = 5
+    Margins.Top = 5
+    Margins.Right = 5
+    Margins.Bottom = 5
+    Caption = 'Button3'
+    TabOrder = 19
+  end
+  object Button4: TButton
+    Left = 39
+    Top = 264
+    Width = 152
+    Height = 63
+    Margins.Left = 5
+    Margins.Top = 5
+    Margins.Right = 5
+    Margins.Bottom = 5
+    Caption = 'DropState'
+    TabOrder = 20
+    OnClick = Button4Click
+  end
   object Timer1: TTimer
-    Enabled = False
-    Interval = 200
+    Interval = 100
     OnTimer = Timer1Timer
     Left = 1216
-  end
-  object Timer2: TTimer
-    Enabled = False
-    Interval = 500
-    OnTimer = Timer2Timer
-    Left = 1184
   end
 end

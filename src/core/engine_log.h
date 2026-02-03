@@ -23,4 +23,10 @@ namespace engine_logic {
         dispatch("Engine", "CRITICAL", crit, Priority::P_CRIT);
         flush_to_disk();
     }
+    
+    struct debug_struct {
+        bool operator()(const std::string& inf) {
+            return debug(inf);
+        }
+    }     ;
 }

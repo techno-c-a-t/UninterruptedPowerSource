@@ -10,15 +10,21 @@
 #include <vector>              // Для временного хранения и сортировки
 #include <algorithm>           // Для std::sort
 #include <System.SysUtils.hpp> // Для StrToIntDef
-#include <queue>
+#include <string>
+#include <sstream>
+#include <iomanip>
 #pragma hdrstop
 #include "src/core/engine.h"
 #include "PowerSourceObject.h"
 #include "DataProcessing.cpp"
+#include "UPSource.h"
 
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 #pragma resource "*.dfm"
+
+#define MAX_VOLTAGE 200.0f
+#define MAX_CURRENT 1.0f
 // #include <System.SysUtils.hpp> // TBytes и AnsiString обычно определены здесь
 
 /**
@@ -40,11 +46,10 @@
 
 
 
-PSEngine engine;
+PSEngine engine(MAX_VOLTAGE, MAX_CURRENT);
 TForm1 *Form1;
 std::deque<float> voltageData = {}; // resize(n, value); push_back(val); pop_front();
 long emulatedTime = 100; // эмуляция времени
-bool timerStarted = 1;
 
 //---------------------------------------------------------------------------
 void addPointToVoltageGraphic(float x)
@@ -68,6 +73,95 @@ void addPointToVoltageGraphic(float x)
     );
     voltagePositionRewrite+=2;
     if(voltagePositionRewrite>98)      voltagePositionRewrite=0;*/
+}
+//---------------------------------------------------------------------------
+void __fastcall setConnectionSwitchOn() {
+     Form1->disableHandlers = true;
+     Form1->Label8->Font->Color = clGreen;
+     Form1->ToggleSwitch1->State = tssOn;
+     Form1->disableHandlers = false;
+}
+
+void __fastcall setConnectionSwitchOff() {
+     Form1->disableHandlers = true;
+     Form1->ToggleSwitch1->State = tssOff;
+     Form1->Label8->Font->Color = clRed;
+     Form1->disableHandlers = false;
+}
+
+void __fastcall setOutSwitchOn() {
+     Form1->disableHandlers = true;
+     Form1->ToggleSwitch2->State = tssOn;
+     Form1->ToggleSwitch2->Color = clGreen;
+     Form1->disableHandlers = false;
+}
+
+void __fastcall setOutSwitchOff () {
+     Form1->disableHandlers = true;
+     Form1->ToggleSwitch2->State = tssOff;
+     Form1->ToggleSwitch2->Color = clRed;
+     Form1->disableHandlers =false;
+}
+//-----------------------------------------------
+
+
+//---------------------------------------------------------------------------
+
+std::string formatFloat(float value, int totalWidth, int precision) {
+    std::stringstream ss;
+
+    ss << std::fixed                 // Использовать фиксированную запятую (не экспоненциальную форму)
+       << std::setprecision(precision) // Сколько знаков ПОСЛЕ запятой
+       << std::setw(totalWidth)      // Минимальная ОБЩАЯ ширина строки
+       << value;
+
+    return ss.str();
+}
+float previousCurrent = 0;
+float previousVoltage = 0;
+void __fastcall TForm1::requestVAUpdate(bool forceUpdate = false)
+{
+    float c_val = -1;
+    float v_val = -1;
+    if (Edit8->Text != "")
+    {
+        try
+        {
+            c_val = StrToFloat(Edit8->Text);
+        }
+        catch (EConvertError &e)
+        {
+            ShowMessage("Currrent field incorrect value. Error: " + e.Message);
+            c_val = -1; // Значение по умолчанию
+        }
+    }
+    if (Edit9->Text != "")
+    {
+        try
+        {
+            v_val = StrToFloat(Edit9->Text);
+        }
+        catch (EConvertError &e)
+        {
+            ShowMessage("Voltage field incorrect value. Error: " + e.Message);
+            v_val = -1; // Значение по умолчанию
+        }
+    }
+    if (((abs(previousVoltage - v_val) > 0.0001) || forceUpdate) && (v_val >= 0))
+    {
+        /*command tmpComm;
+        tmpComm.index = 1;
+        tmpComm.value =*/
+        engine.SetTargetVoltage(v_val);
+        previousVoltage = v_val;
+        // ShowMessage("Push voltage");
+    }
+    if (((abs(previousCurrent - c_val) > 0.0001) || forceUpdate) && (c_val >= 0))
+    {
+        engine.SetTargetCurrent(c_val);
+        previousCurrent = c_val;
+        // ShowMessage("Push current");
+    }
 }
 //---------------------------------------------------------------------------
 
@@ -147,30 +241,6 @@ void __fastcall TForm1::PopulateComPorts()
         // ComboBoxComPortsChange(ComboBoxComPorts); // Обновить LabelSelectedPort
     }
 }
-
-void __fastcall TForm1::handleConnection()
-{
-    /*
-    Panel1->Enabled = True;
-    Panel2->Enabled = True;
-    ToggleSwitch2->Enabled = True;
-    Label7->Enabled = True;
-    Timer1->Enabled = True;
-    */
-}
-
-void __fastcall TForm1::handleDisconnection()
-{
-    /*
-    Panel1->Enabled = False;
-    Panel2->Enabled = False;
-    ToggleSwitch2->Enabled = False;
-    Label7->Enabled = False;
-    Timer1->Enabled = False;
-    */
-}
-
-//---------------------------------------------------------------------------
 // INTERFACE
 //---------------------------------------------------------------------------
 TButton *MemoryButtons[10] = {};
@@ -248,7 +318,7 @@ void __fastcall TForm1::Button1Click(TObject *Sender)
  */
 void __fastcall TForm1::FormClose(TObject *Sender, TCloseAction &Action)
 {
-    UPS.Disconnect();
+    engine.LockDisconnectSync();
 }
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -303,17 +373,14 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
         voltageData.pop_front();
         voltageData.pop_front();
     }
-    */
-    if (timerStarted)
-
-    {
-        timerStarted = 0;
-        return;
-    } // иначе попытка чтения сразу после комманды открыть вход
-    if (UPS.Port.Opened == 0)
-        return;
-
-    if (engine.IsVoltageStab)
+//    */
+//    if (timerStarted)
+//
+//    {
+//        timerStarted = 0;
+//        return;
+//    } // иначе попытка чтения сразу после комманды открыть вход
+    if (engine.IsVoltageStab() && engine.GetOutState())
     {
         Label13->Visible = False;
         Label14->Visible = True;
@@ -321,13 +388,39 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
         Label4->Font->Color = clBlack;
         Label3->Font->Color = clRed;
     }
-    else
+    else if (engine.GetOutState())
     {
         Label14->Visible = False;
         Label13->Visible = True;
 
         Label4->Font->Color = clRed;
         Label3->Font->Color = clBlack;
+    }  else {
+       Label14->Visible = False;
+        Label13->Visible = False;
+
+        Label4->Font->Color = clBlack;
+        Label3->Font->Color = clBlack;
+    }
+    if (engine.GetOutState() != (ToggleSwitch2->State == tssOn)) {
+           engine.GetOutState() ? setOutSwitchOn() : setOutSwitchOff();
+    }
+
+    requestVAUpdate();
+    engine.Tick();
+    float cached_v = engine.GetLastVoltage();
+    float cached_c = engine.GetLastCurrent();
+    if (cached_v < 100.0f) {
+        voltageValue->Caption = FormatFloat("0.00", cached_v);
+    } else {
+        voltageValue->Caption = FormatFloat("0.0", cached_v);
+    }
+    currentValue->Caption = FormatFloat("0.00", cached_c);
+    float power =  cached_v * cached_c;
+    if (power < 100.0f) {
+       powerValue->Caption = FormatFloat("0.00", power);
+    } else {
+      powerValue->Caption = FormatFloat("0.0", power);
     }
 }
 //---------------------------------------------------------------------------
@@ -350,8 +443,7 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
         tmpButtonData->Top = tmpInf.TopLeftX + i * tmpInf.CellHeight;
         tmpButtonData->Top = tmpInf.TopLeftY;
     }
-    // handleDisconnection();
-    // Timer1->Enabled = True;
+    
 }
 //---------------------------------------------------------------------------
 
@@ -361,85 +453,52 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
 void __fastcall TForm1::ToggleSwitch1Click(TObject *Sender)
 {
     // state can be tssOff or tssOn
-    bool stateBefore = UPS.Port.Opened; // для отслеживания изменений
-    std::string TempPortName = AnsiString(ComboBoxComPorts->Text).c_str();
-    if (TempPortName.length() > 6)
-    {
-        if ((ToggleSwitch2->State == tssOn) && (stateBefore))
-        {
-            ToggleSwitch2->State = tssOff;
-            ToggleSwitch2Click(this);
-        }
-        ToggleSwitch1->State = tssOff;
-        Label8->Font->Color = clRed;
-        return;
+    if (disableHandlers) {
+       return;
     }
-    if (stateBefore)
-    {
-        if (UPS.SetLock(0) && UPS.Disconnect())
-        {
-            if (ToggleSwitch2->State == tssOn)
-            {
-                ToggleSwitch2->State = tssOff;
-                ToggleSwitch2Click(this);
-            }
-            Label8->Font->Color = clRed;
-            ToggleSwitch1->State = tssOff;
-            handleDisconnection();
-        }
-        else
-        {
-            ShowMessage("Connection error. Force device disconection applied.");
-            UPS.Port.Opened = false;
-            UPS.LockState = State::DISABLED;
-            if (ToggleSwitch2->State == tssOn)
-            {
-                ToggleSwitch2->State = tssOff;
-                ToggleSwitch2->Color = clRed;
-                Timer1->Enabled = False;
-                Timer2->Enabled = False;
-                timerStarted = 1;
-                commandQueue = {};
-            }
-            Label8->Font->Color = clRed;
-            ToggleSwitch1->State = tssOff;
-            handleDisconnection();
-        }
+    std::string PortName = AnsiString(ComboBoxComPorts->Text).c_str();
+    if (ToggleSwitch1->State == tssOn) {
+         setConnectionSwitchOff();
+         if (engine.LockConnectSync(PortName) == false) {
+            engine_logic::debug("LockConnectSync returned false");
+             return;
+         }
+         setConnectionSwitchOn();
+         setOutSwitchOff();
+         requestVAUpdate(true);
+         engine.SetOutput(false);
+         Sleep(100); // ??Поможет?? Не помогло
+    } else {
+         setConnectionSwitchOn();
+         engine.SetOutput(false);
+         setOutSwitchOff();
+         bool success =  engine.LockDisconnectSync();
+         if (!success) {
+            ShowMessage("Cant disconnect. Probably, connection was lost. This may cause undefined behaviour");
+         }
+         setConnectionSwitchOff();
+         }
     }
-    else
-    {
-        if (UPS.Connect(TempPortName))
-        {
-            Label8->Font->Color = clGreen;
-            ToggleSwitch1->State = tssOn;
-            handleConnection();
-        }
-        else
-        {
-            Label8->Font->Color = clRed;
-            ToggleSwitch1->State = tssOff;
-        }
-    }
-}
+
 //---------------------------------------------------------------------------
 void __fastcall TForm1::ToggleSwitch2Click(TObject *Sender)
 {
-    // state can be tssOff or tssOn
-    if (UPS.SetOut(ToggleSwitch2->State == tssOn) == 0)
-        ToggleSwitch2->State = (ToggleSwitch2->State == tssOn) ? tssOff : tssOn;
-    if (ToggleSwitch2->State == tssOn)
-    {
-        ToggleSwitch2->Color = clGreen;
-        Timer1->Enabled = True;
-        Timer2->Enabled = True;
+ if (disableHandlers) {
+       return;
     }
-    else
-    {
-        ToggleSwitch2->Color = clRed;
-        Timer1->Enabled = False;
-        Timer2->Enabled = False;
-        timerStarted = 1;
-    }
+if (!engine.Connected()) {
+           setOutSwitchOff();
+           engine_logic::debug("ENgine not connected");
+           return;
+}
+bool now_enabled = ToggleSwitch2->State == tssOn ;
+engine_logic::trace("Now out switch is " + std::string(now_enabled? "on" : "off"));
+ engine.SetOutput(now_enabled);
+ engine_logic::trace(
+                     std::string("Output has been set in state ") +
+                     std::string(now_enabled ? "on" : "off")
+                     );
+ now_enabled? setOutSwitchOff() : setOutSwitchOn();  // АПДЕЙТ В ТАЙМЕРЕ !!!
 }
 //--------------------------------------------------------------------------
 
@@ -495,71 +554,21 @@ void __fastcall TForm1::ButtonRefreshPortsClick(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 
-float previousCurrent = 0;
-float previousVoltage = 0;
-void __fastcall TForm1::Timer2Timer(TObject *Sender)
-{
-    float currentValue = -1;
-    float voltageValue = -1;
-    if (Edit8->Text != "")
-    {
-        try
-        {
-            currentValue = StrToFloat(Edit8->Text);
-        }
-        catch (EConvertError &e)
-        {
-            ShowMessage("Currrent field incorrect value. Error: " + e.Message);
-            currentValue = -1; // Значение по умолчанию
-        }
-    }
-    if (Edit9->Text != "")
-    {
-        try
-        {
-            voltageValue = StrToFloat(Edit9->Text);
-        }
-        catch (EConvertError &e)
-        {
-            ShowMessage("Voltage field incorrect value. Error: " + e.Message);
-            voltageValue = -1; // Значение по умолчанию
-        }
-    }
-    if (UPS.Port.Opened == 0)
-    {
-        commandQueue = {};
-    }
-    if ((abs(previousVoltage - voltageValue) > 0.0001) && (voltageValue >= 0))
-    {
-        /*command tmpComm;
-        tmpComm.index = 1;
-        tmpComm.value =*/
-        commandQueue.push({1, voltageValue});
-        previousVoltage = voltageValue;
-        // ShowMessage("Push voltage");
-    }
-    if ((abs(previousCurrent - currentValue) > 0.0001) && (currentValue >= 0))
-    {
-        commandQueue.push({3, currentValue});
-        previousCurrent = currentValue;
-        // ShowMessage("Push current");
-    }
-    Label6->Caption = IntToStr(int(commandQueue.size()));
-}
-//---------------------------------------------------------------------------
-
-void __fastcall TForm1::Button2Click(TObject *Sender)
-{
-    logfile.log(std::string("Logging started"));
-}
-//---------------------------------------------------------------------------
-
 void __fastcall TForm1::Edit9Exit(TObject *Sender)
 {
     String tmp_data = Edit9->Text;
     if (tmp_data == "")
         return;
-    ScrollBar2->Position = ScrollBar2->Max - StrToFloat(tmp_data) * 100;
+        try {
+            ScrollBar2->Position = ScrollBar2->Max - StrToFloat(tmp_data) * 100;
+            if (ScrollBar2->Position < 10000) {
+               Edit9->Text = FormatFloat("0.00", ScrollBar2->Position / 100.0f);
+            } else {
+               Edit9->Text = FormatFloat("0.0", ScrollBar2->Position / 100.0f);
+            }
+        } catch (...) {
+          ShowMessage("Incorrect  voltage value");
+        }
 }
 //---------------------------------------------------------------------------
 
@@ -576,7 +585,12 @@ void __fastcall TForm1::Edit8Exit(TObject *Sender)
     String tmp_data = Edit8->Text;
     if (tmp_data == "")
         return;
-    ScrollBar1->Position = ScrollBar1->Max - StrToFloat(tmp_data) * 100;
+    try {
+               ScrollBar1->Position = ScrollBar1->Max - StrToFloat(tmp_data) * 100;
+               Edit8->Text = FormatFloat("0.00", ScrollBar1->Position / 100.0f);
+    } catch (...) {
+      ShowMessage("Invalid current value");
+    }
 }
 //---------------------------------------------------------------------------
 
@@ -590,6 +604,7 @@ void __fastcall TForm1::Edit8KeyDown(TObject *Sender, WORD &Key, TShiftState Shi
 void __fastcall TForm1::StringGrid1KeyDown(TObject *Sender, WORD &Key,
                                            TShiftState Shift)
 {
+    // ffffuuuck????
     // Получаем указатель на наш грид для удобства
     TStringGrid *grid = dynamic_cast<TStringGrid *>(Sender);
     if (!grid)
@@ -642,3 +657,19 @@ void __fastcall TForm1::StringGrid1KeyDown(TObject *Sender, WORD &Key,
     Key = 0;
 }
 //---------------------------------------------------------------------------
+
+
+void __fastcall TForm1::Button2Click(TObject *Sender)
+{
+     engine.flush_errors();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::Button4Click(TObject *Sender)
+{
+ engine.DropState();
+}
+//---------------------------------------------------------------------------
+
+
+

@@ -1,4 +1,4 @@
-#include "engine.h"
+﻿#include "engine.h"
 #include <chrono>
 
 // === Реализация ErrorLogBuffer ===
@@ -27,7 +27,7 @@ std::vector<PSEngine::RuntimeError> PSEngine::ErrorLogBuffer::getAll() const
 
 // === Реализация PSEngine ===
 
-PSEngine::PSEngine()
+PSEngine::PSEngine(float maxVoltage, float maxCurrent): maxV(maxVoltage), maxC(maxCurrent)
 {
     // Инициализация слотов
     for (auto &slot : commandRegistry)
@@ -40,6 +40,7 @@ PSEngine::PSEngine()
 
     // Назначаем критические команды (идут в highQueue)
     commandRegistry[(int)CommandID::CMD_SET_OUTPUT].isCritical = true;
+    commandRegistry[(int)CommandID::CMD_SET_LOCK].isCritical = true;
     commandRegistry[(int)CommandID::CMD_CONNECT].isCritical = true;
     commandRegistry[(int)CommandID::CMD_DISCONNECT].isCritical = true;
 }
@@ -48,7 +49,7 @@ PSEngine::PSEngine()
 void PSEngine::UpdateSlot(CommandID id, float val)
 {
     int idx = static_cast<int>(id);
-
+    engine_logic::trace(std::string("Pushed commnand number") + std::to_string(idx));
     // 1. Всегда обновляем значение (схлопывание)
     commandRegistry[idx].payload = val;
     commandRegistry[idx].retryCount = 0; // Сброс попыток для новой команды
@@ -56,6 +57,7 @@ void PSEngine::UpdateSlot(CommandID id, float val)
     // 2. Если уже в очереди - выходим (значение мы обновили выше)
     if (commandRegistry[idx].isQueued)
     {
+        engine_logic::trace(std::string("Command ") + std::to_string(idx)+ " is queued. Exiting...");
         return;
     }
 
@@ -112,11 +114,12 @@ void PSEngine::Tick()
     // 1. Выбираем команду для исполнения
     CommandID idToExec = CommandID::CMD_NONE;
     bool isHighPrio = false;
-
     if (!highQueue.empty())
     {
         idToExec = highQueue.front();
         isHighPrio = true;
+        int idx = static_cast<int>(idToExec);
+        engine_logic::trace("Executing hi - prior command " + std::to_string(idx) + std::string(" with value ") + std::to_string(commandRegistry[idx].payload * 1000));
     }
     else if (!queue.empty())
     {
@@ -131,9 +134,9 @@ void PSEngine::Tick()
         // --- ЗАМЕР ВРЕМЕНИ (Если включен) ---
         Timer t;
         t.start();
+        int idx = static_cast<int>(idToExec);
         bool success = ExecuteCommand(idToExec);
         unsigned duration = static_cast<unsigned>(t.check());
-        int idx = static_cast<int>(idToExec);
         if (success)
         {
             // Успех: удаляем из очереди
@@ -264,17 +267,31 @@ bool PSEngine::ExecuteCommand(CommandID id)
         device.GetConnectionState() == utils::State::DISABLED &&
         id != CommandID::CMD_CONNECT)
     {
+        engine_logic::trace("exit because port closed");
         return false;
     }
 
     float val = commandRegistry[static_cast<int>(id)].payload;
-
+    Timer t;
+    t.start();
     switch (id)
     {
     case CommandID::CMD_SET_VOLTAGE:
-        return device.SetVoltage(val);
+        if(val<=maxV){
+            return device.SetVoltage(val);
+        }
+        else {
+            pso_logic::warning("Discarded attempt to set voltage more than max.");
+        }
+        return 0;
     case CommandID::CMD_SET_CURRENT:
-        return device.SetCurrent(val);
+        if(val<=maxC){
+            return device.SetCurrent(val);
+        }
+        else {
+            pso_logic::warning("Discarded attempt to set current more than max.");
+        }
+        return 0;
     case CommandID::CMD_SET_OUTPUT:
         return device.SetOut(val > 0.5f);
     case CommandID::CMD_SET_LOCK:
@@ -283,10 +300,18 @@ bool PSEngine::ExecuteCommand(CommandID id)
         return device.Setup(targetPortName); // Используем сохраненное имя
     case CommandID::CMD_DISCONNECT:
         return device.Disconnect();
-    case CommandID::CMD_GET_VOLTAGE:
-        return device.GetVoltage() >= 0;
-    case CommandID::CMD_GET_CURRENT:
-        return device.GetCurrent() >= 0;
+    case CommandID::CMD_GET_VOLTAGE: {
+        float tmp =  device.GetVoltage();
+        if (tmp >= 0) {
+            lastVoltageUpdate = t.checkS().now;
+        }
+        return tmp;  }
+    case CommandID::CMD_GET_CURRENT: {
+        float tmp = device.GetCurrent();
+        if (tmp >= 0) {
+            lastCurrentUpdate = t.checkS().now;
+        }
+        return tmp;    }
     default:
         return false;
     }
@@ -313,4 +338,70 @@ uint64_t PSEngine::GetCurrentAgeUs() const
     auto now = std::chrono::steady_clock::now();
     uint64_t ts = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count();
     return (lastCurrentUpdate == 0) ? 0 : (ts - lastCurrentUpdate);
+}
+
+bool PSEngine::LockConnectSync(const std::string &port)
+{
+    // 1. Пытаемся открыть порт напрямую через device
+    bool success = device.Setup(port);
+    engine_logic::debug(std::string("Setup returned ") + (success? "true" : "false"));
+    engine_logic::debug(
+        std::string("Connection state is ") + 
+        (static_cast<bool>(device.GetConnectionState())? "true" : "false"));
+    // 2. Если успешно — сбрасываем очереди, чтобы старые команды не полетели в новый порт
+    if (success) {
+        targetPortName = port;
+        queue.clear();
+        highQueue.clear();
+    } else {
+        // Логируем ошибку сразу
+        ReportError(CommandID::CMD_CONNECT, "Sync Connect Failed");
+    }
+    
+    return success;
+}
+
+bool PSEngine::LockDisconnectSync()
+{
+    queue.clear();
+    engine_logic::trace(std::string("High Queue size") + std::to_string(highQueue.size()) );
+    while(!highQueue.empty()) {
+        const auto idToExec = highQueue.front();
+        highQueue.pop_front();
+        engine_logic::trace(std::string("Executing command") + std::to_string(static_cast<int>(idToExec)));
+        try {
+            ExecuteCommand(idToExec);
+            int idx = static_cast<int>(idToExec);
+            commandRegistry[idx].isQueued = false;
+            commandRegistry[idx].retryCount = 0;
+            Sleep(100);
+            engine_logic::trace("Success");
+        } catch(...) {
+
+            // Не даем исключению прервать процесс дисконнекта
+        }
+    }
+    bool success = device.SetLock(false) && device.Disconnect();
+    highQueue.clear(); 
+    return success;
+}
+
+
+void PSEngine::DropState() const noexcept {
+    engine_logic::debug_struct d;
+    using st = std::string ;
+    Timer t;
+    t.start();
+    d(st("\n\n"));
+    d(st("Connection state: ") + st(Connected()? "" :"dis") + "connected" );
+    d(st("Lock state: ") + st(static_cast<bool>(device.GetLockState())?"locked" : "unlocked" ));
+    d(st("Out state: ") + st(static_cast<bool>(device.GetOutState()) ? "enabed" : "disabled"));
+    d(st("Stab mode: ") + st(IsVoltageStab() ? "CV" : "CC"));
+    d(st("Latest voltage: ") + std::to_string(static_cast<int>(GetLastVoltage() * 1000)) + st("mV received at ") + std::to_string(GetVoltageAgeUs()));
+    d(st("Latest current: ") + std::to_string(static_cast<int>(GetLastCurrent() * 1000)) + st("mA received at ") + std::to_string(GetCurrentAgeUs()));
+    d(st("Now is ") + std::to_string(t.checkS().now));
+    d(st("Tick number") + std::to_string(currentTick));
+    d(st("Max V is ") + std::to_string(static_cast<int>(maxV * 1000)) + st("mV, max C is ") + std::to_string(static_cast<int>(maxC * 1000)) + "mA" );
+    d(st("\n\n"));
+
 }

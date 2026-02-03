@@ -1,4 +1,4 @@
-#ifndef ENGINE_H
+﻿#ifndef ENGINE_H
 #define ENGINE_H
 
 #include <vector>
@@ -83,6 +83,7 @@ private:
         void push(CommandID cmd, const std::string &msg, size_t tick, unsigned duration, uint64_t timestamp);
         void log() const
         {
+            engine_logic::error("\n\n");
             if (full)
             {
                 for (size_t i = head; i < buffer.size(); i++)
@@ -94,6 +95,7 @@ private:
             {
                 buffer[i].log_error();
             }
+            engine_logic::error("\n\n");
         }
         void flush_log()
         {
@@ -148,16 +150,19 @@ private:
     void UpdateSlot(CommandID id, float val);
 
 public:
-    PSEngine();
+    PSEngine(float maxVoltage, float maxCurrent);
 
     // === API УПРАВЛЕНИЯ ===
-    void SetTargetVoltage(float v);
+    
+    void SetTargetVoltage(float v); 
     void SetTargetCurrent(float a);
     void SetLock(bool enabled);
     void SetOutput(bool enabled);
 
     void Connect(const std::string &port);
     void Disconnect();
+    bool LockConnectSync(const std::string &port); // Тоже синхронно, чтобы мгновенно обновить UI
+    bool LockDisconnectSync(); // Тоже синхронно, чтобы мгновенно обновить UI
 
     // === ГЛАВНЫЙ ЦИКЛ ===
     void Tick();
@@ -169,6 +174,7 @@ public:
     // Время последнего обновления (можно использовать для подсветки "тухлых" данных в UI)
     uint64_t GetVoltageAgeUs() const;
     uint64_t GetCurrentAgeUs() const;
+    bool GetOutState() const {return static_cast<bool>(device.GetOutState());}
 
     bool Connected() const { return device.GetConnectionState() == utils::State::ENABLED; }
     bool IsVoltageStab() const { return device.GetMode() == utils::Mode::VOLTAGE; }
@@ -176,6 +182,10 @@ public:
     std::vector<RuntimeError> GetErrors() const { return errorLog.getAll(); }
     void SetMode(EngineMode mode) { currentMode = mode; }
     void flush_errors() { errorLog.flush_log(); }
+    const float maxC;
+    const float maxV;
+
+    void DropState() const noexcept;
 };
 
 #endif

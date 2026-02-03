@@ -7,11 +7,15 @@
 // Пытается открыть порт, если не уже
 bool PowerSource::Connect(std::string comPort) noexcept
 {
+    pso_logic::trace(std::string("Called Connect with port = \"") + comPort + "\", connection state is");
     if (connection_state == State::ENABLED)
     {
+        pso_logic::trace("state::enabled");
         return true;
     }
+    pso_logic::trace("state::disabled. Attempt to connect");
     connection_state = Port.Open(comPort) ? State::ENABLED : State::DISABLED;
+    pso_logic::trace(connection_state == State::ENABLED ? "Success" : "Failed");
     return static_cast<bool>(connection_state);
 };
 
@@ -60,14 +64,15 @@ float PowerSource::GetVoltage() noexcept
         pso_logic::error("MSU returned incorrect value after reading Voltage in PS::GetVoltage");
         return -1.0f;
     }
-    if (response[1] == '1')
-    {
-        mode = Mode::VOLTAGE;
-    }
-    else if (response[1] == 'C')
-    {
-        mode = Mode::CURRENT;
-    }
+    // Почему то криво работает
+    // if (response[1] == '1')
+    // {
+    //     mode = Mode::VOLTAGE;
+    // }
+    // else if (response[1] == 'C')
+    // {
+    //     mode = Mode::CURRENT;
+    // }
 
     if ((response[2] == '2'))
     {
@@ -225,10 +230,11 @@ bool PowerSource::SetCurrent(float current) noexcept
 
 bool PowerSource::SetOut(bool setOn) noexcept
 {
-    if (setOn == static_cast<bool>(out_state))
-    {
-        return true;
-    }
+    // if (setOn == static_cast<bool>(out_state))
+    // {
+    //     return true;
+    // }
+    // Если это включить, перестанет работать форс - отключение для синхронизации физического и логического состояния
     if (setOn)
     {
         bool success = Port.Write(std::string("<07000000000>"));
@@ -251,10 +257,11 @@ bool PowerSource::SetOut(bool setOn) noexcept
 };
 bool PowerSource::SetLock(bool setOn) noexcept
 {
-    if (setOn == static_cast<bool>(lock_state))
-    {
-        return true;
-    }
+    // if (setOn == static_cast<bool>(lock_state))
+    // {
+    //     return true;
+    // }
+    // Если это включить, перестанет работать форс - отключение для синхронизации физического и логического состояния
     if (setOn)
     {
         if (Port.Write(std::string("<09100000000>")) == false)

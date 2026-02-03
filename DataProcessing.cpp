@@ -7,7 +7,6 @@
 };
 enum class activeFunction : byte
 {
-
     VOLTAGE = 1,
     CURRENT,  //2
     ENABLE_OUTPUT,
