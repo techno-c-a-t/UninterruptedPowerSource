@@ -13,9 +13,6 @@ Coordinates=302,280,53,58
 [Panel4]
 Coordinates=557,212,55,58
 
-[StringGrid1]
-Coordinates=596,10,80,58
-
 [ComboBoxComPorts]
 Coordinates=10,10,135,124
 
@@ -133,4 +130,7 @@ Coordinates=511,527,83,36
 
 []
 Coordinates=777,56,91,36
+
+[memoryGrid]
+Coordinates=596,10,80,58
 

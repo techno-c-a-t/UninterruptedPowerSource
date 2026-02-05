@@ -17,6 +17,13 @@
 #include <Vcl.WinXCtrls.hpp>
 #include <Vcl.ComCtrls.hpp>
 #include <Vcl.Grids.hpp>
+#include <string>
+#include <sstream>
+#include <iomanip>
+#include <cmath>
+#include <algorithm>
+#include <vector>
+#include "src/components/MemTable.h"
 //---------------------------------------------------------------------------
 class TForm1 : public TForm
 {
@@ -62,15 +69,17 @@ __published:	// IDE-managed Components
     TLabel *Label1;
     TLabel *Label13;
     TLabel *Label14;
-    TStringGrid *StringGrid1;
+    TStringGrid *memoryGrid;
     TStringGrid *StringGrid2;
     TButton *Button3;
     TButton *Button4;
     TLabel *powerValue;
     TLabel *Label15;
+    // NOT INTERFACE
 
     void __fastcall PopulateComPorts();
     void __fastcall requestVAUpdate(bool forceUpdate);
+    void __fastcall ApplyPreset(size_t row);
     //INTERFACE
     void __fastcall Button1Click(TObject *Sender);
     void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
@@ -87,14 +96,59 @@ __published:	// IDE-managed Components
     void __fastcall Edit9KeyDown(TObject *Sender, WORD &Key, TShiftState Shift);
     void __fastcall Edit8Exit(TObject *Sender);
     void __fastcall Edit8KeyDown(TObject *Sender, WORD &Key, TShiftState Shift);
-    void __fastcall StringGrid1KeyDown(TObject *Sender, WORD &Key, TShiftState Shift);
+    void __fastcall memoryGridKeyDown(TObject *Sender, WORD &Key, TShiftState Shift);
     void __fastcall Button2Click(TObject *Sender);
     void __fastcall Button4Click(TObject *Sender);
+    void __fastcall memoryGridMouseDown(TObject *Sender, TMouseButton Button, TShiftState Shift,
+          int X, int Y);
 
 
 
 private:	// User declarations
 public:		// User declarations
+            /**
+ * Форматирует float в строку с жестким контролем лимитов.
+ * @param value - само число
+ * @param maxTotalDigits - сколько всего цифр (значимых) может быть в строке
+ * @param maxDecimals - потолок знаков после запятой
+ */
+inline static std::string formatValue(float value, int maxTotalDigits, int maxDecimals) {
+    if (std::isnan(value)) return "NaN";
+    if (std::isinf(value)) return "Inf";
+
+    // 1. Считаем количество цифр в целой части
+    float absValue = std::abs(value);
+    int intPartDigits = 0;
+
+    if (absValue < 1.0f) {
+        intPartDigits = 1; // Для чисел типа 0.123 целая часть — это одна цифра '0'
+    } else {
+        intPartDigits = static_cast<int>(std::log10(absValue)) + 1;
+    }
+
+    // 2. Вычисляем, сколько места осталось на дробную часть
+    // Вычитаем из общего лимита целую часть
+    int allowedDecimals = maxTotalDigits - intPartDigits;
+
+    // Дробных знаков не может быть меньше нуля и больше нашего "потолка" (maxDecimals)
+    int finalPrecision = std::max(0, std::min(allowedDecimals, maxDecimals));
+
+    // 3. Форматируем через stringstream
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(finalPrecision) << value;
+
+    std::string result = ss.str();
+    std::replace(result.begin(), result.end(), '.', ',');
+    // 4. Тонкий момент: если число слишком большое и даже без дробной части
+    // превышает maxTotalDigits, можно либо обрезать, либо вернуть как есть.
+    // Обычно в приборах в таких случаях выводят "----" или ограничивают.
+
+    return result;
+}
+inline static String formatValue_c(float value, int maxTotalDigits, int maxDecimals) {
+        return formatValue(value, maxTotalDigits , maxDecimals ).c_str();
+}
+
     __fastcall TForm1(TComponent* Owner);
 
     struct TStringGridCellInfo {
@@ -105,6 +159,11 @@ public:		// User declarations
 
 };
     bool disableHandlers = false;
+
+
+
+ void __fastcall TForm1::SaveCurrentToPreset(size_t index);
+
 };
 //---------------------------------------------------------------------------
 extern PACKAGE TForm1 *Form1;

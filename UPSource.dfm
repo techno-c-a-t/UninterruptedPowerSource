@@ -2,8 +2,8 @@ object Form1: TForm1
   Left = 0
   Top = 0
   Caption = 'PowerSource interface'
-  ClientHeight = 488
-  ClientWidth = 1297
+  ClientHeight = 545
+  ClientWidth = 1721
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -471,7 +471,7 @@ object Form1: TForm1
     TabOrder = 10
     object currentValue: TLabel
       Left = 8
-      Top = -11
+      Top = -9
       Width = 266
       Height = 121
       AutoSize = False
@@ -482,6 +482,7 @@ object Form1: TForm1
       Font.Name = 'Segoe UI'
       Font.Style = [fsBold]
       ParentFont = False
+      Transparent = True
     end
     object Label4: TLabel
       Left = 280
@@ -533,6 +534,7 @@ object Form1: TForm1
       Font.Name = 'Segoe UI'
       Font.Style = [fsBold]
       ParentFont = False
+      Transparent = True
     end
   end
   object ToggleSwitch2: TToggleSwitch
@@ -606,25 +608,24 @@ object Form1: TForm1
     TabOrder = 16
     OnClick = Button2Click
   end
-  object StringGrid1: TStringGrid
-    Left = 1077
+  object memoryGrid: TStringGrid
+    Left = 976
     Top = 88
-    Width = 205
+    Width = 220
     Height = 415
     Margins.Left = 5
     Margins.Top = 5
     Margins.Right = 5
     Margins.Bottom = 5
-    ColCount = 2
-    DefaultColWidth = 100
+    ColCount = 3
+    DefaultColWidth = 70
     DefaultRowHeight = 36
-    FixedCols = 0
     RowCount = 11
-    Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goDrawFocusSelected, goEditing, goFixedRowDefAlign]
+    Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goDrawFocusSelected, goRowSelect, goFixedRowDefAlign]
     ScrollBars = ssNone
     TabOrder = 17
-    Visible = False
-    OnKeyDown = StringGrid1KeyDown
+    OnKeyDown = memoryGridKeyDown
+    OnMouseDown = memoryGridMouseDown
   end
   object StringGrid2: TStringGrid
     Left = 1292
@@ -643,7 +644,7 @@ object Form1: TForm1
     ScrollBars = ssVertical
     TabOrder = 18
     Visible = False
-    OnKeyDown = StringGrid1KeyDown
+    OnKeyDown = memoryGridKeyDown
   end
   object Button3: TButton
     Left = 1932

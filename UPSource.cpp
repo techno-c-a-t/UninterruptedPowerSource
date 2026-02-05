@@ -15,6 +15,7 @@
 #include <iomanip>
 #pragma hdrstop
 #include "src/core/engine.h"
+#include "src/components/MemTable.h"
 #include "PowerSourceObject.h"
 #include "DataProcessing.cpp"
 #include "UPSource.h"
@@ -50,6 +51,7 @@ PSEngine engine(MAX_VOLTAGE, MAX_CURRENT);
 TForm1 *Form1;
 std::deque<float> voltageData = {}; // resize(n, value); push_back(val); pop_front();
 long emulatedTime = 100; // эмуляция времени
+std::vector<storage::CVMemPair> CVMemoryArray;
 
 //---------------------------------------------------------------------------
 void addPointToVoltageGraphic(float x)
@@ -127,11 +129,11 @@ void __fastcall TForm1::requestVAUpdate(bool forceUpdate = false)
     {
         try
         {
-            c_val = StrToFloat(Edit8->Text);
+
+            c_val = StrToFloat(StringReplace(Edit8->Text, ".", ",", TReplaceFlags() << rfReplaceAll));
         }
         catch (EConvertError &e)
         {
-            ShowMessage("Currrent field incorrect value. Error: " + e.Message);
             c_val = -1; // Значение по умолчанию
         }
     }
@@ -139,11 +141,10 @@ void __fastcall TForm1::requestVAUpdate(bool forceUpdate = false)
     {
         try
         {
-            v_val = StrToFloat(Edit9->Text);
+            v_val = StrToFloat(StringReplace(Edit9->Text, ".", ",", TReplaceFlags() << rfReplaceAll));
         }
         catch (EConvertError &e)
         {
-            ShowMessage("Voltage field incorrect value. Error: " + e.Message);
             v_val = -1; // Значение по умолчанию
         }
     }
@@ -318,6 +319,7 @@ void __fastcall TForm1::Button1Click(TObject *Sender)
  */
 void __fastcall TForm1::FormClose(TObject *Sender, TCloseAction &Action)
 {
+    storage::SavePresetsToDisk("SavedData.ini", CVMemoryArray);
     engine.LockDisconnectSync();
 }
 //---------------------------------------------------------------------------
@@ -328,8 +330,8 @@ void __fastcall TForm1::FormClose(TObject *Sender, TCloseAction &Action)
  */
 void __fastcall TForm1::ScrollBar1Change(TObject *Sender)
 {
-    float value = (ScrollBar1->Max - ScrollBar1->Position) / 100.0;
-    Edit8->Text = FloatToStrF(value, ffFixed, 6, 2);
+    float value = (/*ScrollBar1->Max - */ScrollBar1->Position) / 100.0;
+    Edit8->Text = formatValue_c(value, 4, 2);
     if (value < 100)
     {
         ScrollBar1->SmallChange = 1;
@@ -345,8 +347,8 @@ void __fastcall TForm1::ScrollBar1Change(TObject *Sender)
  */
 void __fastcall TForm1::ScrollBar2Change(TObject *Sender)
 {
-    float value = (ScrollBar2->Max - ScrollBar2->Position) / 100.0;
-    Edit9->Text = FloatToStrF(value, ffFixed, 6, 2);
+    float value = (/*ScrollBar2->Max - */ScrollBar2->Position) / 100.0;
+    Edit9->Text = formatValue_c(value, 4, 2);
     if (value < 100)
     {
         ScrollBar2->SmallChange = 1;
@@ -410,18 +412,10 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
     engine.Tick();
     float cached_v = engine.GetLastVoltage();
     float cached_c = engine.GetLastCurrent();
-    if (cached_v < 100.0f) {
-        voltageValue->Caption = FormatFloat("0.00", cached_v);
-    } else {
-        voltageValue->Caption = FormatFloat("0.0", cached_v);
-    }
-    currentValue->Caption = FormatFloat("0.00", cached_c);
+    voltageValue->Caption = formatValue_c(cached_v, 4, 2);
+    currentValue->Caption = formatValue_c(cached_c, 4, 2);
     float power =  cached_v * cached_c;
-    if (power < 100.0f) {
-       powerValue->Caption = FormatFloat("0.00", power);
-    } else {
-      powerValue->Caption = FormatFloat("0.0", power);
-    }
+    powerValue->Caption = formatValue_c(power, 4, 2);
 }
 //---------------------------------------------------------------------------
 
@@ -432,18 +426,32 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
 {
     srand(time(NULL));
     ButtonRefreshPortsClick(this);
-    ScrollBar1->Position = ScrollBar1->Max;
-    ScrollBar2->Position = ScrollBar2->Max;
-    TStringGridCellInfo tmpInf = GetGridDetails(StringGrid1);
-    TButton *tmpButtonData = nullptr;
-    for (int i = 0; i < 0; i++)
-    {
-        tmpButtonData = new TButton(this);
-        MemoryButtons[i] = tmpButtonData;
-        tmpButtonData->Top = tmpInf.TopLeftX + i * tmpInf.CellHeight;
-        tmpButtonData->Top = tmpInf.TopLeftY;
-    }
-    
+    ScrollBar1->Position = /*ScrollBar1->Max*/ 0;
+    ScrollBar2->Position = /*ScrollBar2->Max*/ 0;
+//    TStringGridCellInfo tmpInf = GetGridDetails(StringGrid1);
+//    TButton *tmpButtonData = nullptr;
+//    for (int i = 0; i < 0; i++)
+//    {
+//        tmpButtonData = new TButton(this);
+//        MemoryButtons[i] = tmpButtonData;
+//        tmpButtonData->Top = tmpInf.TopLeftX + i * tmpInf.CellHeight;
+//        tmpButtonData->Top = tmpInf.TopLeftY;
+//    }
+
+
+    // 3. Прописываем заголовки (Row 0)
+    memoryGrid->Cells[0][0] = "№";
+    memoryGrid->Cells[1][0] = "A";
+    memoryGrid->Cells[2][0] = "V";
+
+    // Можно задать ширину колонок кодом, чтобы было красиво
+    memoryGrid->ColWidths[0] = 40;  // Узкая для номера
+    memoryGrid->ColWidths[1] = 80;  // Для вольт
+    memoryGrid->ColWidths[2] = 80;  // Для ампер
+      CVMemoryArray.resize(10);
+    storage::LoadPresetsFromDisk("SavedData.ini", CVMemoryArray); // Загрузили файл в память
+    VectorToGrid(CVMemoryArray, memoryGrid, 0, 10);         // Отобразили на экране
+
 }
 //---------------------------------------------------------------------------
 
@@ -556,16 +564,13 @@ void __fastcall TForm1::ButtonRefreshPortsClick(TObject *Sender)
 
 void __fastcall TForm1::Edit9Exit(TObject *Sender)
 {
-    String tmp_data = Edit9->Text;
+    Edit9->Text = StringReplace(Edit9->Text, ".", ",", TReplaceFlags() << rfReplaceAll);
+    String tmp_data =  Edit9->Text;
     if (tmp_data == "")
         return;
         try {
-            ScrollBar2->Position = ScrollBar2->Max - StrToFloat(tmp_data) * 100;
-            if (ScrollBar2->Position < 10000) {
-               Edit9->Text = FormatFloat("0.00", ScrollBar2->Position / 100.0f);
-            } else {
-               Edit9->Text = FormatFloat("0.0", ScrollBar2->Position / 100.0f);
-            }
+            ScrollBar2->Position = /*ScrollBar2->Max - */StrToFloat(tmp_data) * 100;
+            Edit9->Text = formatValue_c(ScrollBar2->Position / 100.0f, 4, 2);
         } catch (...) {
           ShowMessage("Incorrect  voltage value");
         }
@@ -582,12 +587,13 @@ void __fastcall TForm1::Edit9KeyDown(TObject *Sender, WORD &Key, TShiftState Shi
 
 void __fastcall TForm1::Edit8Exit(TObject *Sender)
 {
+    Edit8->Text = StringReplace(Edit8->Text, ".", ",", TReplaceFlags() << rfReplaceAll);
     String tmp_data = Edit8->Text;
     if (tmp_data == "")
         return;
     try {
-               ScrollBar1->Position = ScrollBar1->Max - StrToFloat(tmp_data) * 100;
-               Edit8->Text = FormatFloat("0.00", ScrollBar1->Position / 100.0f);
+               ScrollBar1->Position = /*ScrollBar1->Max - */ StrToFloat(tmp_data) * 100;
+               Edit8->Text = formatValue_c(ScrollBar1->Position / 100.0f, 4, 2);
     } catch (...) {
       ShowMessage("Invalid current value");
     }
@@ -601,7 +607,7 @@ void __fastcall TForm1::Edit8KeyDown(TObject *Sender, WORD &Key, TShiftState Shi
         Edit8Exit(this);
 }
 //---------------------------------------------------------------------------
-void __fastcall TForm1::StringGrid1KeyDown(TObject *Sender, WORD &Key,
+void __fastcall TForm1::memoryGridKeyDown(TObject *Sender, WORD &Key,
                                            TShiftState Shift)
 {
     // ffffuuuck????
@@ -670,6 +676,7 @@ void __fastcall TForm1::Button4Click(TObject *Sender)
  engine.DropState();
 }
 //---------------------------------------------------------------------------
+
 
 
 
