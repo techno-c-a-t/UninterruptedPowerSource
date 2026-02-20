@@ -1,6 +1,6 @@
-#include "cstddef"
 #include <vector>
 #include <string>
+#include <cstddef>
 #ifndef LOG_CORE
 #define LOG_CORE
 namespace logger_internal {

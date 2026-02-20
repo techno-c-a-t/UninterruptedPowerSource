@@ -25,8 +25,8 @@ void __fastcall TForm1::memoryGridMouseDown(TObject *Sender, TMouseButton Button
 }
 
 // Константы для колонок (чтобы не запутаться)
-const int COL_VOLTAGE = 2;
-const int COL_CURRENT = 1;
+const int COL_VOLTAGE = 1;
+const int COL_CURRENT = 2;
 
 /**
  * Переносим данные из Вектора в Таблицу (Визуализация)

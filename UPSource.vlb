@@ -19,9 +19,6 @@ Coordinates=10,10,135,124
 [Label1]
 Coordinates=129,348,53,58
 
-[Memo2]
-Coordinates=329,10,64,58
-
 [Panel2]
 Coordinates=403,10,55,58
 
@@ -74,20 +71,11 @@ Coordinates=10,348,44,58
 [ComboBox1]
 Coordinates=155,10,101,124
 
-[Edit1]
-Coordinates=503,212,44,58
-
 [Button1]
 Coordinates=603,280,59,58
 
 [Timer1]
 Coordinates=600,527,55,36
-
-[RadioGroup1]
-Coordinates=73,280,91,58
-
-[LabelSelectedPort]
-Coordinates=142,144,120,58
 
 [ToggleSwitch1]
 Coordinates=301,348,99,36
@@ -119,17 +107,11 @@ Coordinates=266,10,53,58
 [ButtonRefreshPorts]
 Coordinates=136,212,127,58
 
-[Memo1]
-Coordinates=468,10,64,58
-
-[Label11]
-Coordinates=273,212,60,58
-
 [LineSeries1]
 Coordinates=511,527,83,36
 
 []
-Coordinates=777,56,91,36
+Coordinates=503,212,44,58
 
 [memoryGrid]
 Coordinates=596,10,80,58

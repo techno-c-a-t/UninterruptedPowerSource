@@ -28,10 +28,7 @@
 class TForm1 : public TForm
 {
 __published:	// IDE-managed Components
-    TEdit *Edit1;
     TButton *Button1;
-    TMemo *Memo1;
-    TMemo *Memo2;
     TPanel *Panel1;
     TEdit *Edit8;
     TScrollBar *ScrollBar1;
@@ -43,7 +40,6 @@ __published:	// IDE-managed Components
     TTimer *Timer1;
     TChart *Chart2;
     TLineSeries *LineSeries1;
-    TRadioGroup *RadioGroup1;
     TToggleSwitch *ToggleSwitch1;
     TLabel *Label7;
     TLabel *Label8;
@@ -59,11 +55,9 @@ __published:	// IDE-managed Components
     TComboBox *ComboBox1;
     TLabel *Label9;
     TLabel *Label10;
-    TLabel *Label11;
     TLabel *Label5;
     TLabel *Label6;
     TLabel *Label12;
-    TLabel *LabelSelectedPort;
     TButton *Button2;
     TLabel *Label2;
     TLabel *Label1;
@@ -71,10 +65,16 @@ __published:	// IDE-managed Components
     TLabel *Label14;
     TStringGrid *memoryGrid;
     TStringGrid *StringGrid2;
-    TButton *Button3;
     TButton *Button4;
     TLabel *powerValue;
     TLabel *Label15;
+    TLabel *Time;
+	TPanel *pnlStattic;
+	TPanel *Panel8;
+	TPanel *Panel9;
+	TPanel *Panel10;
+	TGroupBox *GroupBox1;
+	TButton *SaveMemGrid;
     // NOT INTERFACE
 
     void __fastcall PopulateComPorts();
@@ -91,7 +91,7 @@ __published:	// IDE-managed Components
     void __fastcall ToggleSwitch2Click(TObject *Sender);
     void __fastcall Label8Click(TObject *Sender);
     void __fastcall ButtonRefreshPortsClick(TObject *Sender);
-    void __fastcall ComboBoxComPortsChange(TObject *Sender);
+//    void __fastcall ComboBoxComPortsChange(TObject *Sender);
     void __fastcall Edit9Exit(TObject *Sender);
     void __fastcall Edit9KeyDown(TObject *Sender, WORD &Key, TShiftState Shift);
     void __fastcall Edit8Exit(TObject *Sender);
@@ -100,7 +100,8 @@ __published:	// IDE-managed Components
     void __fastcall Button2Click(TObject *Sender);
     void __fastcall Button4Click(TObject *Sender);
     void __fastcall memoryGridMouseDown(TObject *Sender, TMouseButton Button, TShiftState Shift,
-          int X, int Y);
+		  int X, int Y);
+
 
 
 

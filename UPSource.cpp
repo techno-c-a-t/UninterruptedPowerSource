@@ -1,6 +1,13 @@
 ﻿
 //---------------------------------------------------------------------------
 #include <vcl.h>
+
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+#pragma resource "*.dfm"
+#include "UPSource.h"
+#pragma hdrstop
+
 #include <cstring>   // Для strlen
 #include <stdexcept> // Для исключений
 #include <random>
@@ -13,18 +20,15 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
-#pragma hdrstop
 #include "src/core/engine.h"
+#include "src/utils/time_manager.h"
 #include "src/components/MemTable.h"
 #include "PowerSourceObject.h"
 #include "DataProcessing.cpp"
-#include "UPSource.h"
 
-//---------------------------------------------------------------------------
-#pragma package(smart_init)
-#pragma resource "*.dfm"
 
-#define MAX_VOLTAGE 200.0f
+
+#define MAX_VOLTAGE 300.0f
 #define MAX_CURRENT 1.0f
 // #include <System.SysUtils.hpp> // TBytes и AnsiString обычно определены здесь
 
@@ -407,8 +411,9 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
     if (engine.GetOutState() != (ToggleSwitch2->State == tssOn)) {
            engine.GetOutState() ? setOutSwitchOn() : setOutSwitchOff();
     }
-
-    requestVAUpdate();
+    if (engine.Connected()) {
+       requestVAUpdate();
+    }
     engine.Tick();
     float cached_v = engine.GetLastVoltage();
     float cached_c = engine.GetLastCurrent();
@@ -416,6 +421,8 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
     currentValue->Caption = formatValue_c(cached_c, 4, 2);
     float power =  cached_v * cached_c;
     powerValue->Caption = formatValue_c(power, 4, 2);
+
+    Time->Caption = TimeNowString().c_str();
 }
 //---------------------------------------------------------------------------
 
@@ -441,8 +448,8 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
 
     // 3. Прописываем заголовки (Row 0)
     memoryGrid->Cells[0][0] = "№";
-    memoryGrid->Cells[1][0] = "A";
-    memoryGrid->Cells[2][0] = "V";
+	memoryGrid->Cells[1][0] = "V";
+	memoryGrid->Cells[2][0] = "A";
 
     // Можно задать ширину колонок кодом, чтобы было красиво
     memoryGrid->ColWidths[0] = 40;  // Узкая для номера
@@ -521,17 +528,18 @@ void __fastcall TForm1::Label8Click(TObject *Sender)
 /**
  * @brief Обновляет метку LabelSelectedPort при выборе нового COM-порта в ComboBoxComPorts.
  */
-void __fastcall TForm1::ComboBoxComPortsChange(TObject *Sender)
-{
-    if (ComboBoxComPorts->ItemIndex != -1 && ComboBoxComPorts->Items->Count > 0 && ComboBoxComPorts->Enabled)
-    {
-        LabelSelectedPort->Caption = "Выбран порт: " + ComboBoxComPorts->Text;
-    }
-    else
-    {
-        LabelSelectedPort->Caption = "Порт не выбран";
-    }
-}
+//void __fastcall TForm1::ComboBoxComPortsChange(TObject *Sender)
+//{
+//    if (ComboBoxComPorts->ItemIndex != -1 && ComboBoxComPorts->Items->Count > 0 && ComboBoxComPorts->Enabled)
+//    {
+//        LabelSelectedPort->Caption = "Выбран порт: " + ComboBoxComPorts->Text;
+//    }
+//    else
+//    {
+//        LabelSelectedPort->Caption = "Порт не выбран";
+//    }
+//}
+
 /*---------------------------------------------------------------------------
 void __fastcall TForm1::ButtonConnectClick(TObject *Sender)
 {
