@@ -186,6 +186,9 @@
         <CppCompile Include="src\Components\MemTable.cpp">
             <BuildOrder>8</BuildOrder>
         </CppCompile>
+        <CppCompile Include="src\components\SaveOpen.cpp">
+            <BuildOrder>8</BuildOrder>
+        </CppCompile>
         <CppCompile Include="src\core\engine.cpp">
             <BuildOrder>11</BuildOrder>
         </CppCompile>

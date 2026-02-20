@@ -323,7 +323,7 @@ void __fastcall TForm1::Button1Click(TObject *Sender)
  */
 void __fastcall TForm1::FormClose(TObject *Sender, TCloseAction &Action)
 {
-    storage::SavePresetsToDisk("SavedData.ini", CVMemoryArray);
+    storage::SavePresetsToDisk("AutomaticallySavedData.ini", CVMemoryArray);
     engine.LockDisconnectSync();
 }
 //---------------------------------------------------------------------------
@@ -388,22 +388,22 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
 //    } // иначе попытка чтения сразу после комманды открыть вход
     if (engine.IsVoltageStab() && engine.GetOutState())
     {
-        Label13->Visible = False;
-        Label14->Visible = True;
+//        Label13->Visible = False;
+//        Label14->Visible = True;
 
         Label4->Font->Color = clBlack;
         Label3->Font->Color = clRed;
     }
     else if (engine.GetOutState())
     {
-        Label14->Visible = False;
-        Label13->Visible = True;
+//        Label14->Visible = False;
+//        Label13->Visible = True;
 
         Label4->Font->Color = clRed;
         Label3->Font->Color = clBlack;
     }  else {
-       Label14->Visible = False;
-        Label13->Visible = False;
+//       Label14->Visible = False;
+//        Label13->Visible = False;
 
         Label4->Font->Color = clBlack;
         Label3->Font->Color = clBlack;
@@ -456,7 +456,16 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
     memoryGrid->ColWidths[1] = 80;  // Для вольт
     memoryGrid->ColWidths[2] = 80;  // Для ампер
       CVMemoryArray.resize(10);
-    storage::LoadPresetsFromDisk("SavedData.ini", CVMemoryArray); // Загрузили файл в память
+
+    String fileName = "ManuallySavedData.ini";
+
+    if (FileExists(fileName)) {
+       storage::LoadPresetsFromDisk("ManuallySavedData.ini", CVMemoryArray); // Загрузили файл в память
+    } else {
+        storage::LoadPresetsFromDisk("AutomaticallySavedData.ini", CVMemoryArray); // Загрузили файл в память
+    }
+
+
     VectorToGrid(CVMemoryArray, memoryGrid, 0, 10);         // Отобразили на экране
 
 }
@@ -687,4 +696,10 @@ void __fastcall TForm1::Button4Click(TObject *Sender)
 
 
 
+
+void __fastcall TForm1::SaveMemGridClick(TObject *Sender)
+{
+storage::SavePresetsToDisk("ManuallySavedData.ini", CVMemoryArray);
+}
+//---------------------------------------------------------------------------
 

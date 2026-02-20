@@ -28,7 +28,6 @@
 class TForm1 : public TForm
 {
 __published:	// IDE-managed Components
-    TButton *Button1;
     TPanel *Panel1;
     TEdit *Edit8;
     TScrollBar *ScrollBar1;
@@ -61,8 +60,6 @@ __published:	// IDE-managed Components
     TButton *Button2;
     TLabel *Label2;
     TLabel *Label1;
-    TLabel *Label13;
-    TLabel *Label14;
     TStringGrid *memoryGrid;
     TStringGrid *StringGrid2;
     TButton *Button4;
@@ -101,6 +98,7 @@ __published:	// IDE-managed Components
     void __fastcall Button4Click(TObject *Sender);
     void __fastcall memoryGridMouseDown(TObject *Sender, TMouseButton Button, TShiftState Shift,
 		  int X, int Y);
+    void __fastcall SaveMemGridClick(TObject *Sender);
 
 
 

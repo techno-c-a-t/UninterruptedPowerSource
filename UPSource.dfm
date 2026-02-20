@@ -111,56 +111,6 @@ object Form1: TForm1
     Margins.Bottom = 5
     Caption = 'Label12'
   end
-  object Label13: TLabel
-    Left = 1364
-    Top = 714
-    Width = 48
-    Height = 37
-    Margins.Left = 5
-    Margins.Top = 5
-    Margins.Right = 5
-    Margins.Bottom = 5
-    Caption = 'C.C.'
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -27
-    Font.Name = 'Segoe UI'
-    Font.Style = [fsBold]
-    ParentFont = False
-    Visible = False
-  end
-  object Label14: TLabel
-    Left = 1451
-    Top = 714
-    Width = 46
-    Height = 37
-    Margins.Left = 5
-    Margins.Top = 5
-    Margins.Right = 5
-    Margins.Bottom = 5
-    Caption = 'C.V.'
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -27
-    Font.Name = 'Segoe UI'
-    Font.Style = [fsBold]
-    ParentFont = False
-  end
-  object Button1: TButton
-    Left = 1364
-    Top = 647
-    Width = 148
-    Height = 45
-    Caption = #1054#1090#1087#1088#1072#1074#1080#1090#1100
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -27
-    Font.Name = 'Segoe UI'
-    Font.Style = []
-    ParentFont = False
-    TabOrder = 0
-    OnClick = Button1Click
-  end
   object Chart1: TChart
     Left = 8
     Top = 555
@@ -180,7 +130,7 @@ object Form1: TForm1
     Shadow.Visible = False
     View3D = False
     BevelOuter = bvNone
-    TabOrder = 1
+    TabOrder = 0
     DefaultCanvas = 'TGDIPlusCanvas'
     ColorPaletteIndex = 13
     object Series1: TLineSeries
@@ -213,7 +163,7 @@ object Form1: TForm1
     Shadow.Visible = False
     View3D = False
     BevelOuter = bvNone
-    TabOrder = 2
+    TabOrder = 1
     DefaultCanvas = 'TGDIPlusCanvas'
     ColorPaletteIndex = 13
     object LineSeries1: TLineSeries
@@ -237,13 +187,13 @@ object Form1: TForm1
     StateCaptions.CaptionOff = #1042#1067#1050#1051
     SwitchHeight = 30
     SwitchWidth = 60
-    TabOrder = 3
+    TabOrder = 2
     ThumbWidth = 0
     OnClick = ToggleSwitch1Click
   end
   object ComboBoxComPorts: TComboBox
-    Left = 418
-    Top = 25
+    Left = 422
+    Top = 21
     Width = 138
     Height = 45
     Margins.Left = 5
@@ -251,7 +201,7 @@ object Form1: TForm1
     Margins.Right = 5
     Margins.Bottom = 5
     AutoComplete = False
-    TabOrder = 4
+    TabOrder = 3
     Text = 'ComboBoxComPorts'
   end
   object ButtonRefreshPorts: TButton
@@ -260,7 +210,7 @@ object Form1: TForm1
     Width = 132
     Height = 41
     Caption = #1054#1073#1085#1086#1074#1080#1090#1100
-    TabOrder = 5
+    TabOrder = 4
     OnClick = ButtonRefreshPortsClick
   end
   object ComboBox1: TComboBox
@@ -272,7 +222,7 @@ object Form1: TForm1
     Margins.Top = 5
     Margins.Right = 5
     Margins.Bottom = 5
-    TabOrder = 6
+    TabOrder = 5
     Text = 'SPPS3001D'
     Items.Strings = (
       'SPPS3001D')
@@ -283,7 +233,7 @@ object Form1: TForm1
     Width = 152
     Height = 39
     Caption = 'DropErrors'
-    TabOrder = 7
+    TabOrder = 6
     OnClick = Button2Click
   end
   object memoryGrid: TStringGrid
@@ -302,7 +252,7 @@ object Form1: TForm1
     RowCount = 11
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goDrawFocusSelected, goRowSelect, goFixedRowDefAlign]
     ScrollBars = ssNone
-    TabOrder = 8
+    TabOrder = 7
     OnKeyDown = memoryGridKeyDown
     OnMouseDown = memoryGridMouseDown
     RowHeights = (
@@ -333,7 +283,7 @@ object Form1: TForm1
     RowCount = 20
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goDrawFocusSelected, goEditing, goFixedRowDefAlign]
     ScrollBars = ssVertical
-    TabOrder = 9
+    TabOrder = 8
     OnKeyDown = memoryGridKeyDown
   end
   object Button4: TButton
@@ -346,7 +296,7 @@ object Form1: TForm1
     Margins.Right = 5
     Margins.Bottom = 5
     Caption = 'DropState'
-    TabOrder = 10
+    TabOrder = 9
     OnClick = Button4Click
   end
   object pnlStattic: TPanel
@@ -360,7 +310,7 @@ object Form1: TForm1
     Margins.Bottom = 5
     BevelOuter = bvNone
     BorderWidth = 1
-    TabOrder = 11
+    TabOrder = 10
     object Panel4: TPanel
       Left = 1
       Top = 1
@@ -544,7 +494,6 @@ object Form1: TForm1
         TabOrder = 1
         StyleElements = [seFont, seBorder]
         OnChange = ScrollBar1Change
-        ExplicitTop = 114
       end
     end
     object Panel2: TPanel
@@ -671,7 +620,7 @@ object Form1: TForm1
     Margins.Right = 5
     Margins.Bottom = 5
     Caption = 'Panel8'
-    TabOrder = 12
+    TabOrder = 11
     object Time: TLabel
       Left = 1
       Top = 1
@@ -774,7 +723,7 @@ object Form1: TForm1
     Font.Name = 'Segoe UI'
     Font.Style = []
     ParentFont = False
-    TabOrder = 13
+    TabOrder = 12
   end
   object SaveMemGrid: TButton
     Left = 859
@@ -786,7 +735,8 @@ object Form1: TForm1
     Margins.Right = 5
     Margins.Bottom = 5
     Caption = 'SaveMemGrid'
-    TabOrder = 14
+    TabOrder = 13
+    OnClick = SaveMemGridClick
   end
   object Timer1: TTimer
     Interval = 100
