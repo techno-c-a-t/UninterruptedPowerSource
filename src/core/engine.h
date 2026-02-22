@@ -143,10 +143,10 @@ private:
 public:
   PSEngine(float maxVoltage, float maxCurrent);
 
-  SetMaxCurrent(float maxCurrent) {
+  void SetMaxCurrent(float maxCurrent) {
     maxC =  maxCurrent;
   }
-  SetMaxVoltage(float maxVoltage) {
+  void SetMaxVoltage(float maxVoltage) {
     maxV =  maxVoltage;
   }
 
