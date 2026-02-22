@@ -105,6 +105,9 @@ private:
   PowerSource device;
   EngineMode currentMode = EngineMode::STABLE;
 
+  float maxC;
+  float maxV;
+
   // Реестр команд
   std::array<CommandSlot, static_cast<int>(CommandID::CMD_COUNT)>
       commandRegistry;
@@ -139,6 +142,13 @@ private:
 
 public:
   PSEngine(float maxVoltage, float maxCurrent);
+
+  SetMaxCurrent(float maxCurrent) {
+    maxC =  maxCurrent;
+  }
+  SetMaxVoltage(float maxVoltage) {
+    maxV =  maxVoltage;
+  }
 
   // === API УПРАВЛЕНИЯ ===
 
@@ -176,8 +186,7 @@ public:
   std::vector<RuntimeError> GetErrors() const { return errorLog.getAll(); }
   void SetMode(EngineMode mode) { currentMode = mode; }
   void flush_errors() { errorLog.flush_log(); }
-  const float maxC;
-  const float maxV;
+
 
   void DropState() const noexcept;
 };
