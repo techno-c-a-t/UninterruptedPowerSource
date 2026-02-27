@@ -72,7 +72,7 @@ __published:	// IDE-managed Components
 	TGroupBox *gbCommPortSelect;
 	TGroupBox *gbConnecction;
 	TGroupBox *GroupBox1;
-	TLabel *Label8;
+	TLabel *EnergyLabel;
 	TLabel *Label9;
     // NOT INTERFACE
 

@@ -487,7 +487,6 @@ object Form1: TForm1
         TabOrder = 1
         StyleElements = [seFont, seBorder]
         OnChange = ScrollBar2Change
-        ExplicitWidth = 292
       end
     end
     object ToggleSwitch2: TToggleSwitch
@@ -566,7 +565,6 @@ object Form1: TForm1
       Margins.Bottom = 5
       Align = alTop
       TabOrder = 0
-      ExplicitWidth = 191
       object powerValue: TLabel
         Left = 1
         Top = 1
@@ -619,8 +617,7 @@ object Form1: TForm1
       Margins.Bottom = 5
       Align = alTop
       TabOrder = 1
-      ExplicitWidth = 191
-      object Label8: TLabel
+      object EnergyLabel: TLabel
         Left = 1
         Top = 1
         Width = 128
@@ -709,7 +706,6 @@ object Form1: TForm1
       Text = 'SPPS3001D'
       Items.Strings = (
         'SPPS3001D')
-      ExplicitWidth = 187
     end
   end
   object SaveMemGrid: TButton
@@ -788,7 +784,6 @@ object Form1: TForm1
       ParentFont = False
       TabOrder = 1
       OnClick = ButtonRefreshPortsClick
-      ExplicitWidth = 144
     end
   end
   object gbConnecction: TGroupBox

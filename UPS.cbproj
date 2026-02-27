@@ -183,6 +183,9 @@
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
     </PropertyGroup>
     <ItemGroup>
+        <CppCompile Include="src\components\EnergyLabel.cpp">
+            <BuildOrder>9</BuildOrder>
+        </CppCompile>
         <CppCompile Include="src\Components\MemTable.cpp">
             <BuildOrder>8</BuildOrder>
         </CppCompile>

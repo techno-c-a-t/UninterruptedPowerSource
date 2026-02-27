@@ -2,16 +2,17 @@
 #define ENERGY_LABEL_H
 #include "UPSource.h"
 #include "src/utils/time_manager.h"
-struct EnergyLabel {
+struct EnergyLabelUpdater {
 TLabel* label = nullptr;
+Timer timer;
 float energy = 0; // in J
-void EnergyLabelUpdate (float v, float c);
-EnergyLabel(TLabel* l, Timer& t) : label(l), tick_time(t);
+void Update (float v, float c);
+EnergyLabelUpdater() = default;
 inline void CleanValue() {
     energy = 0;
 }
-~EnergyLabel() = default;
+~EnergyLabelUpdater() = default;
 
-}
+};
 
 #endif

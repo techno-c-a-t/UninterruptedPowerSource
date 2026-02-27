@@ -25,6 +25,7 @@
 #include "src/components/MemTable.h"
 #include "PowerSourceObject.h"
 #include "DataProcessing.cpp"
+#include "src/components/EnergyLabel.h"
 
 
 
@@ -54,14 +55,16 @@
 PSEngine engine(MAX_VOLTAGE, MAX_CURRENT);
 TForm1 *Form1;
 std::deque<float> voltageData = {}; // resize(n, value); push_back(val); pop_front();
-long emulatedTime = 100; // эмуляция времени
 std::vector<storage::CVMemPair> CVMemoryArray;
+EnergyLabelUpdater Energy;
+
+size_t emulatedTime = 100;
 
 //---------------------------------------------------------------------------
 void addPointToVoltageGraphic(float x)
 {
     Form1->Chart1->Series[0]->Clear();
-    voltageData.push_back(++emulatedTime);
+	voltageData.push_back(++emulatedTime);
     voltageData.push_back(x);
     if (voltageData.size() > 2)
     {
@@ -375,11 +378,11 @@ void __fastcall TForm1::ScrollBar2Change(TObject *Sender)
  */
 void __fastcall TForm1::Timer1Timer(TObject *Sender)
 {
-    /*addPointToVoltageGraphic(rand()*1.0/1000);
+	/*addPointToVoltageGraphic(rand()*1.0/1000);
     if(voltageData.size()>200)
     {
         voltageData.pop_front();
-        voltageData.pop_front();
+		voltageData.pop_front();
     }
 //    */
 //    if (timerStarted)
@@ -423,8 +426,9 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
     currentValue->Caption = formatValue_c(cached_c, 4, 2);
     float power =  cached_v * cached_c;
     powerValue->Caption = formatValue_c(power, 4, 2);
+	Energy.Update(cached_v, cached_c);
 
-    Time->Caption = TimeNowString().c_str();
+	Time->Caption = TimeNowString().c_str();
 }
 //---------------------------------------------------------------------------
 
@@ -433,10 +437,12 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
  */
 void __fastcall TForm1::FormCreate(TObject *Sender)
 {
-    srand(time(NULL));
+	srand(time(NULL));
     ButtonRefreshPortsClick(this);
     ScrollBar1->Position = /*ScrollBar1->Max*/ 0;
-    ScrollBar2->Position = /*ScrollBar2->Max*/ 0;
+	ScrollBar2->Position = /*ScrollBar2->Max*/ 0;
+
+	Energy.label = Form1->EnergyLabel;
 //    TStringGridCellInfo tmpInf = GetGridDetails(StringGrid1);
 //    TButton *tmpButtonData = nullptr;
 //    for (int i = 0; i < 0; i++)
