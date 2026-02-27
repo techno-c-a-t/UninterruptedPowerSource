@@ -425,7 +425,7 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
     voltageValue->Caption = formatValue_c(cached_v, 4, 2);
     currentValue->Caption = formatValue_c(cached_c, 4, 2);
     float power =  cached_v * cached_c;
-    powerValue->Caption = formatValue_c(power, 4, 2);
+	powerValue->Caption = formatValue_c(power, 4, 2);
 	Energy.Update(cached_v, cached_c);
 
 	Time->Caption = TimeNowString().c_str();

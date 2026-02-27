@@ -119,35 +119,34 @@ inline static std::string formatValue(float value, int maxTotalDigits, int maxDe
     if (std::isnan(value)) return "NaN";
     if (std::isinf(value)) return "Inf";
 
-    // 1. Считаем количество цифр в целой части
     float absValue = std::abs(value);
-    int intPartDigits = 0;
 
-    if (absValue < 1.0f) {
-        intPartDigits = 1; // Для чисел типа 0.123 целая часть — это одна цифра '0'
-    } else {
-        intPartDigits = static_cast<int>(std::log10(absValue)) + 1;
+    // 1. Проверка на превышение максимально допустимого целого числа
+    // Например, если maxTotalDigits = 4, то макс. число 9999
+    double maxLimit = std::pow(10, maxTotalDigits) - 1;
+    if (absValue > maxLimit) {
+        std::string overflow(maxTotalDigits, '9');
+        return (value < 0 ? "-" : "") + overflow;
     }
 
-    // 2. Вычисляем, сколько места осталось на дробную часть
-    // Вычитаем из общего лимита целую часть
+    // 2. Считаем количество цифр в целой части для определения точности
+    int intPartDigits = (absValue < 1.0f) ? 1 : static_cast<int>(std::log10(absValue)) + 1;
+
+    // 3. Вычисляем точность (сколько знаков влезет после запятой)
     int allowedDecimals = maxTotalDigits - intPartDigits;
+    int finalPrecision = std::clamp(allowedDecimals, 0, maxDecimals);
 
-    // Дробных знаков не может быть меньше нуля и больше нашего "потолка" (maxDecimals)
-    int finalPrecision = std::max(0, std::min(allowedDecimals, maxDecimals));
-
-    // 3. Форматируем через stringstream
+    // 4. Форматирование
     std::stringstream ss;
     ss << std::fixed << std::setprecision(finalPrecision) << value;
-
     std::string result = ss.str();
+
+    // Заменяем точку на запятую
     std::replace(result.begin(), result.end(), '.', ',');
-    // 4. Тонкий момент: если число слишком большое и даже без дробной части
-    // превышает maxTotalDigits, можно либо обрезать, либо вернуть как есть.
-    // Обычно в приборах в таких случаях выводят "----" или ограничивают.
 
     return result;
 }
+
 inline static String formatValue_c(float value, int maxTotalDigits, int maxDecimals) {
         return formatValue(value, maxTotalDigits , maxDecimals ).c_str();
 }
