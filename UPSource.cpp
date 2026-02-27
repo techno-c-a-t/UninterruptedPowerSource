@@ -83,7 +83,8 @@ void addPointToVoltageGraphic(float x)
 //---------------------------------------------------------------------------
 void __fastcall setConnectionSwitchOn() {
      Form1->disableHandlers = true;
-     Form1->Label8->Font->Color = clGreen;
+//     Form1->Label8->Font->Color = clGreen;
+     Form1->ToggleSwitch1->Color = clGreen;
      Form1->ToggleSwitch1->State = tssOn;
      Form1->disableHandlers = false;
 }
@@ -91,22 +92,23 @@ void __fastcall setConnectionSwitchOn() {
 void __fastcall setConnectionSwitchOff() {
      Form1->disableHandlers = true;
      Form1->ToggleSwitch1->State = tssOff;
-     Form1->Label8->Font->Color = clRed;
+//     Form1->Label8->Font->Color = clRed;
+     Form1->ToggleSwitch1->Color = clGray;
      Form1->disableHandlers = false;
 }
 
 void __fastcall setOutSwitchOn() {
      Form1->disableHandlers = true;
      Form1->ToggleSwitch2->State = tssOn;
-     Form1->ToggleSwitch2->Color = clGreen;
+	 Form1->ToggleSwitch2->Color = clLime;
      Form1->disableHandlers = false;
 }
 
 void __fastcall setOutSwitchOff () {
      Form1->disableHandlers = true;
-     Form1->ToggleSwitch2->State = tssOff;
-     Form1->ToggleSwitch2->Color = clRed;
-     Form1->disableHandlers =false;
+	 Form1->ToggleSwitch2->State = tssOff;
+	 Form1->ToggleSwitch2->Color = clGray;
+	 Form1->disableHandlers =false;
 }
 //-----------------------------------------------
 
@@ -487,7 +489,7 @@ void __fastcall TForm1::ToggleSwitch1Click(TObject *Sender)
             engine_logic::debug("LockConnectSync returned false");
              return;
          }
-         setConnectionSwitchOn();
+	     setConnectionSwitchOn();
          setOutSwitchOff();
          requestVAUpdate(true);
          engine.SetOutput(false);
@@ -702,5 +704,4 @@ void __fastcall TForm1::SaveMemGridClick(TObject *Sender)
 storage::SavePresetsToDisk("ManuallySavedData.ini", CVMemoryArray);
 }
 //---------------------------------------------------------------------------
-
 

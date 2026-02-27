@@ -37,9 +37,6 @@ Coordinates=619,419,58,36
 [Label12]
 Coordinates=463,280,60,58
 
-[Label10]
-Coordinates=335,144,60,58
-
 [Timer2]
 Coordinates=619,474,55,36
 
@@ -80,17 +77,11 @@ Coordinates=413,212,80,58
 [ToggleSwitch2]
 Coordinates=192,348,99,36
 
-[Label9]
-Coordinates=10,212,53,58
-
 [Chart1]
 Coordinates=272,144,53,58
 
 [voltageValue]
 Coordinates=531,144,89,58
-
-[Label8]
-Coordinates=10,280,53,58
 
 [Label4]
 Coordinates=266,10,53,58
@@ -102,7 +93,7 @@ Coordinates=136,212,127,58
 Coordinates=511,527,83,36
 
 []
-Coordinates=603,280,59,58
+Coordinates=335,144,60,58
 
 [memoryGrid]
 Coordinates=596,10,80,58

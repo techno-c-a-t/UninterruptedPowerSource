@@ -41,7 +41,6 @@ __published:	// IDE-managed Components
     TLineSeries *LineSeries1;
     TToggleSwitch *ToggleSwitch1;
     TLabel *Label7;
-    TLabel *Label8;
     TPanel *Panel3;
     TLabel *currentValue;
     TLabel *Label4;
@@ -52,8 +51,6 @@ __published:	// IDE-managed Components
     TComboBox *ComboBoxComPorts;
     TButton *ButtonRefreshPorts;
     TComboBox *ComboBox1;
-    TLabel *Label9;
-    TLabel *Label10;
     TLabel *Label5;
     TLabel *Label6;
     TLabel *Label12;
@@ -64,14 +61,19 @@ __published:	// IDE-managed Components
     TStringGrid *StringGrid2;
     TButton *Button4;
     TLabel *powerValue;
-    TLabel *Label15;
+	TLabel *W;
     TLabel *Time;
 	TPanel *pnlStattic;
-	TPanel *Panel8;
-	TPanel *Panel9;
+	TPanel *pnlCalkParam;
+	TPanel *Power;
 	TPanel *Panel10;
-	TGroupBox *GroupBox1;
+	TGroupBox *gbDeviceSelect;
 	TButton *SaveMemGrid;
+	TGroupBox *gbCommPortSelect;
+	TGroupBox *gbConnecction;
+	TGroupBox *GroupBox1;
+	TLabel *Label8;
+	TLabel *Label9;
     // NOT INTERFACE
 
     void __fastcall PopulateComPorts();
@@ -99,6 +101,8 @@ __published:	// IDE-managed Components
     void __fastcall memoryGridMouseDown(TObject *Sender, TMouseButton Button, TShiftState Shift,
 		  int X, int Y);
     void __fastcall SaveMemGridClick(TObject *Sender);
+
+
 
 
 
