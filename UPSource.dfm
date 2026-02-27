@@ -544,7 +544,6 @@ object Form1: TForm1
       Alignment = taCenter
       Caption = 'time'
       Color = clBlack
-      Enabled = False
       Font.Charset = RUSSIAN_CHARSET
       Font.Color = clWindowText
       Font.Height = -40
@@ -552,7 +551,8 @@ object Form1: TForm1
       Font.Style = [fsBold]
       ParentColor = False
       ParentFont = False
-      ExplicitWidth = 80
+      ExplicitLeft = 3
+      ExplicitTop = 2
     end
     object Power: TPanel
       Left = 4
@@ -565,6 +565,8 @@ object Form1: TForm1
       Margins.Bottom = 5
       Align = alTop
       TabOrder = 0
+      ExplicitLeft = 6
+      ExplicitTop = 65
       object powerValue: TLabel
         Left = 1
         Top = 1
@@ -617,6 +619,8 @@ object Form1: TForm1
       Margins.Bottom = 5
       Align = alTop
       TabOrder = 1
+      ExplicitLeft = 6
+      ExplicitTop = 143
       object EnergyLabel: TLabel
         Left = 1
         Top = 1

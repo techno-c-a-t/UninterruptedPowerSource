@@ -104,7 +104,8 @@ void __fastcall setOutSwitchOn() {
      Form1->disableHandlers = true;
      Form1->ToggleSwitch2->State = tssOn;
 	 Form1->ToggleSwitch2->Color = clLime;
-     Form1->disableHandlers = false;
+	 Form1->disableHandlers = false;
+     Energy->CleanValue();
 }
 
 void __fastcall setOutSwitchOff () {
