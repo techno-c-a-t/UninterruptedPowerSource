@@ -8,25 +8,39 @@
 bool PowerSource::Connect(std::string comPort) noexcept
 {
     pso_logic::trace(std::string("Called Connect with port = \"") + comPort + "\", connection state is");
-    if (connection_state == State::ENABLED)
+    if (port_state == State::ENABLED)
     {
         pso_logic::trace("state::enabled");
         return true;
     }
     pso_logic::trace("state::disabled. Attempt to connect");
-    connection_state = Port.Open(comPort) ? State::ENABLED : State::DISABLED;
-    pso_logic::trace(connection_state == State::ENABLED ? "Success" : "Failed");
-    return static_cast<bool>(connection_state);
+    port_state = Port.Open(comPort) ? State::ENABLED : State::DISABLED;
+    pso_logic::trace(port_state == State::ENABLED ? "Success" : "Failed");
+    return static_cast<bool>(port_state);
 };
 
 bool PowerSource::Setup(std::string comPort) noexcept
 {
-    return Connect(comPort) && SetLock(true);
+	connection_state = static_cast<State>(Connect(comPort) && SetLock(true));
+    if (connection_state == State::DISABLED) {
+        Teardown();
+        return false;
+    }
+    return true;
+	// return static_cast<bool>(connection_state);
+}
+
+bool PowerSource::Teardown() noexcept
+{
+    SetLock(false);
+    Sleep(100);
+	connection_state = static_cast<State>(!Disconnect());
+	return static_cast<bool>(connection_state == State::DISABLED);
 }
 
 bool PowerSource::Disconnect() noexcept // повторяет Close из класса ComfPort
 {
-    if (connection_state == State::DISABLED)
+    if (port_state == State::DISABLED)
     {
         return true;
     };
@@ -35,6 +49,7 @@ bool PowerSource::Disconnect() noexcept // повторяет Close из кла�
         if (Port.Close())
         {
             connection_state = State::DISABLED;
+            port_state = State::DISABLED;
             return true;
         }
         return false;

@@ -17,6 +17,7 @@
 #include <Vcl.WinXCtrls.hpp>
 #include <Vcl.ComCtrls.hpp>
 #include <Vcl.Grids.hpp>
+#include <Vcl.Dialogs.hpp>
 #include <string>
 #include <sstream>
 #include <iomanip>
@@ -24,36 +25,29 @@
 #include <algorithm>
 #include <vector>
 #include "src/components/MemTable.h"
+#include "src/utils/time_manager.h"
 //---------------------------------------------------------------------------
 class TForm1 : public TForm
 {
 __published:	// IDE-managed Components
     TPanel *Panel1;
     TEdit *Edit8;
-    TScrollBar *ScrollBar1;
+	TScrollBar *ScrollBar1;
     TPanel *Panel2;
     TEdit *Edit9;
-    TScrollBar *ScrollBar2;
+	TScrollBar *ScrollBar2;
     TChart *Chart1;
     TLineSeries *Series1;
     TTimer *Timer1;
     TChart *Chart2;
     TLineSeries *LineSeries1;
-    TToggleSwitch *ToggleSwitch1;
-    TLabel *Label7;
     TPanel *Panel3;
-    TLabel *currentValue;
-    TLabel *Label4;
+	TLabel *currentValue;
+	TLabel *Label4;
     TPanel *Panel4;
     TLabel *Label3;
     TLabel *voltageValue;
     TToggleSwitch *ToggleSwitch2;
-    TComboBox *ComboBoxComPorts;
-    TButton *ButtonRefreshPorts;
-    TComboBox *ComboBox1;
-    TLabel *Label5;
-    TLabel *Label6;
-    TLabel *Label12;
     TButton *Button2;
     TLabel *Label2;
     TLabel *Label1;
@@ -67,13 +61,26 @@ __published:	// IDE-managed Components
 	TPanel *pnlCalkParam;
 	TPanel *Power;
 	TPanel *Panel10;
-	TGroupBox *gbDeviceSelect;
 	TButton *SaveMemGrid;
-	TGroupBox *gbCommPortSelect;
-	TGroupBox *gbConnecction;
-	TGroupBox *GroupBox1;
-	TLabel *EnergyLabel;
+	TLabel *batteryCapacity;
 	TLabel *Label9;
+	TPanel *pnlComm;
+	TGroupBox *gbConnection;
+	TToggleSwitch *ToggleSwitch1;
+	TGroupBox *gbDeviceSelect;
+	TComboBox *ComboBox1;
+	TGroupBox *gbCommPortSelect;
+	TComboBox *ComboBoxComPorts;
+	TButton *ButtonRefreshPorts;
+	TPanel *Panel5;
+	TLabel *energyLabel;
+	TLabel *Wh;
+	TLabel *CycleTimeLabel;
+	TButton *Button1;
+	TEdit *discret;
+	TButton *SaweSeans;
+	TSaveDialog *sdSaveSeans;
+
     // NOT INTERFACE
 
     void __fastcall PopulateComPorts();
@@ -84,11 +91,10 @@ __published:	// IDE-managed Components
     void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
     void __fastcall ScrollBar1Change(TObject *Sender);
     void __fastcall ScrollBar2Change(TObject *Sender);
-    void __fastcall Timer1Timer(TObject *Sender);
-    void __fastcall FormCreate(TObject *Sender);
+	void __fastcall Timer1Timer(TObject *Sender);
+	void __fastcall FormCreate(TObject *Sender);
     void __fastcall ToggleSwitch1Click(TObject *Sender);
-    void __fastcall ToggleSwitch2Click(TObject *Sender);
-    void __fastcall Label8Click(TObject *Sender);
+	void __fastcall ToggleSwitch2Click(TObject *Sender);
     void __fastcall ButtonRefreshPortsClick(TObject *Sender);
 //    void __fastcall ComboBoxComPortsChange(TObject *Sender);
     void __fastcall Edit9Exit(TObject *Sender);
@@ -101,13 +107,19 @@ __published:	// IDE-managed Components
     void __fastcall memoryGridMouseDown(TObject *Sender, TMouseButton Button, TShiftState Shift,
 		  int X, int Y);
     void __fastcall SaveMemGridClick(TObject *Sender);
-
-
+	void __fastcall ComboBox1Change(TObject *Sender);
 
 
 
 
 private:	// User declarations
+//	unsigned int elapsedSeconds; // Счётчик секунд цикла
+//	bool cycleRunning;           // Флаг работы цикла
+//
+//	void __fastcall UpdateCycleTimerLabel();
+
+
+
 public:		// User declarations
             /**
  * Форматирует float в строку с жестким контролем лимитов.
@@ -115,8 +127,11 @@ public:		// User declarations
  * @param maxTotalDigits - сколько всего цифр (значимых) может быть в строке
  * @param maxDecimals - потолок знаков после запятой
  */
+
+	float VCurve = 1.0f;
+	float CCurve = 1.0f;
 inline static std::string formatValue(float value, int maxTotalDigits, int maxDecimals) {
-    if (std::isnan(value)) return "NaN";
+	if (std::isnan(value)) return "NaN";
     if (std::isinf(value)) return "Inf";
 
     float absValue = std::abs(value);
@@ -160,7 +175,11 @@ inline static String formatValue_c(float value, int maxTotalDigits, int maxDecim
     bool IsValid;     // Флаг, указывающий, удалось ли получить информацию
 
 };
-    bool disableHandlers = false;
+
+void __fastcall UpdateCycleTimeLabel();
+	bool disableHandlers = false;
+	Timer CycleTimeLabelTimer;
+	std::vector<int> LastCycleDurationValue {0, 0, 0};
 
 
 

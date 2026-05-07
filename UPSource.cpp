@@ -26,6 +26,7 @@
 #include "PowerSourceObject.h"
 #include "DataProcessing.cpp"
 #include "src/components/EnergyLabel.h"
+#include "src/components/Models.h"
 
 
 
@@ -57,8 +58,10 @@ TForm1 *Form1;
 std::deque<float> voltageData = {}; // resize(n, value); push_back(val); pop_front();
 std::vector<storage::CVMemPair> CVMemoryArray;
 EnergyLabelUpdater Energy;
+CapacityLabelUpdater Capacity;
 
 size_t emulatedTime = 100;
+
 
 //---------------------------------------------------------------------------
 void addPointToVoltageGraphic(float x)
@@ -84,35 +87,61 @@ void addPointToVoltageGraphic(float x)
     if(voltagePositionRewrite>98)      voltagePositionRewrite=0;*/
 }
 //---------------------------------------------------------------------------
+
+void __fastcall ChangeGroupState(TGroupBox* Group, bool State) {
+	Group->Enabled = State;
+    Group->Font->Color = State ? clBlack : clSilver;
+    for (int i = 0; i < Group->ControlCount; i++) {
+        Group->Controls[i]->Enabled = State;
+    }
+}
+
+//---------------------------------------------------------------------------
+
 void __fastcall setConnectionSwitchOn() {
-     Form1->disableHandlers = true;
-//     Form1->Label8->Font->Color = clGreen;
+	 Form1->disableHandlers = true;
      Form1->ToggleSwitch1->Color = clGreen;
      Form1->ToggleSwitch1->State = tssOn;
-     Form1->disableHandlers = false;
+	 Form1->disableHandlers = false;
+	 ChangeGroupState(Form1->gbCommPortSelect, false);
+	 ChangeGroupState(Form1->gbDeviceSelect, false);
 }
 
 void __fastcall setConnectionSwitchOff() {
      Form1->disableHandlers = true;
-     Form1->ToggleSwitch1->State = tssOff;
-//     Form1->Label8->Font->Color = clRed;
+	 Form1->ToggleSwitch1->State = tssOff;
      Form1->ToggleSwitch1->Color = clGray;
-     Form1->disableHandlers = false;
+	 Form1->disableHandlers = false;
+	 ChangeGroupState(Form1->gbCommPortSelect, true);
+	 ChangeGroupState(Form1->gbDeviceSelect, true);
 }
 
 void __fastcall setOutSwitchOn() {
-     Form1->disableHandlers = true;
+	 Form1->disableHandlers = true;
      Form1->ToggleSwitch2->State = tssOn;
 	 Form1->ToggleSwitch2->Color = clLime;
 	 Form1->disableHandlers = false;
-     Energy->CleanValue();
 }
 
 void __fastcall setOutSwitchOff () {
-     Form1->disableHandlers = true;
+	 Form1->disableHandlers = true;
 	 Form1->ToggleSwitch2->State = tssOff;
 	 Form1->ToggleSwitch2->Color = clGray;
 	 Form1->disableHandlers =false;
+
+
+}
+
+void __fastcall handleOutConnection () {
+	Form1->CycleTimeLabelTimer.start();
+    Energy.CleanValue();
+	Capacity.CleanValue();
+
+}
+
+void __fastcall handleOutDisconnection () {
+	Form1->CycleTimeLabelTimer.stop();
+
 }
 //-----------------------------------------------
 
@@ -309,7 +338,17 @@ __fastcall TForm1::TForm1(TComponent *Owner)
  */
 void __fastcall TForm1::Button1Click(TObject *Sender)
 {
-    /*AnsiString msg = AnsiString(Edit1->Text);
+	 ShowMessage(CycleTimeLabelTimer.check());
+	 if(CycleTimeLabelTimer.check()) {
+		 Form1->CycleTimeLabelTimer.stop();
+	 } else {
+		 Form1->CycleTimeLabelTimer.start();
+     }
+
+
+
+
+	/*AnsiString msg = AnsiString(Edit1->Text);
     if(strlen(msg.c_str())!=13)
     {
     if (MessageDlg("Длина строки, которую необходимо отправить, \n не равна 13. Все равно отправить?", mtConfirmation, TMsgDlgButtons() << mbYes << mbNo,0) != mrYes)
@@ -338,14 +377,18 @@ void __fastcall TForm1::FormClose(TObject *Sender, TCloseAction &Action)
 /**
  * @brief Обновляет текстовое поле Edit8 значением из ScrollBar1.
  */
+// Current
 void __fastcall TForm1::ScrollBar1Change(TObject *Sender)
 {
-    float value = (/*ScrollBar1->Max - */ScrollBar1->Position) / 100.0;
-    Edit8->Text = formatValue_c(value, 4, 2);
-    if (value < 100)
+	float min = ScrollBar1->Min, max = ScrollBar1->Max, pos = ScrollBar1->Position;
+	float norm_value = (pos - min)/(max - min);
+	float value = pow(norm_value, CCurve);
+	float final_value = (min + value * (max - min)) / 100;
+	Edit8->Text = formatValue_c(final_value, 4, 3);
+	if (final_value < 100)
     {
         ScrollBar1->SmallChange = 1;
-    }
+	}
     else
     {
         ScrollBar1->SmallChange = 10;
@@ -355,18 +398,22 @@ void __fastcall TForm1::ScrollBar1Change(TObject *Sender)
 /**
  * @brief Обновляет текстовое поле Edit9 инвертированным значением из ScrollBar2.
  */
+ // Voltage
 void __fastcall TForm1::ScrollBar2Change(TObject *Sender)
 {
-    float value = (/*ScrollBar2->Max - */ScrollBar2->Position) / 100.0;
-    Edit9->Text = formatValue_c(value, 4, 2);
-    if (value < 100)
-    {
-        ScrollBar2->SmallChange = 1;
-    }
-    else
-    {
-        ScrollBar2->SmallChange = 10;
-    }
+	float min = ScrollBar2->Min, max = ScrollBar2->Max, pos = ScrollBar2->Position;
+	float norm_value = (pos - min)/(max - min);
+	float value = pow(norm_value, VCurve);
+	float final_value = (min + value * (max - min)) / 100;
+	Edit9->Text = formatValue_c(final_value, 4, 2);
+	if (final_value < 100)
+	{
+		ScrollBar2->SmallChange = 1;
+	}
+	else
+	{
+		ScrollBar2->SmallChange = 10;
+	}
 }
 //---------------------------------------------------------------------------
 
@@ -415,7 +462,15 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
         Label3->Font->Color = clBlack;
     }
     if (engine.GetOutState() != (ToggleSwitch2->State == tssOn)) {
-           engine.GetOutState() ? setOutSwitchOn() : setOutSwitchOff();
+		if (engine.GetOutState()) {
+			 setOutSwitchOn();
+			 handleOutConnection();
+
+		} else {
+			setOutSwitchOff();
+			handleOutDisconnection();
+
+		}
     }
     if (engine.Connected()) {
        requestVAUpdate();
@@ -424,12 +479,19 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
     float cached_v = engine.GetLastVoltage();
     float cached_c = engine.GetLastCurrent();
     voltageValue->Caption = formatValue_c(cached_v, 4, 2);
-    currentValue->Caption = formatValue_c(cached_c, 4, 2);
+    currentValue->Caption = formatValue_c(cached_c, 4, 3);
     float power =  cached_v * cached_c;
 	powerValue->Caption = formatValue_c(power, 4, 2);
 	Energy.Update(cached_v, cached_c);
+	Capacity.Update(cached_v, cached_c);
 
-	Time->Caption = TimeNowString().c_str();
+
+
+	//---------------------------------------------------------------------------
+	auto now_vector = TimeNowVector();
+    now_vector.pop_back();
+	Time->Caption = TimeNowString(now_vector).c_str();  //вывод текущего времени
+	UpdateCycleTimeLabel();
 }
 //---------------------------------------------------------------------------
 
@@ -443,7 +505,7 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
     ScrollBar1->Position = /*ScrollBar1->Max*/ 0;
 	ScrollBar2->Position = /*ScrollBar2->Max*/ 0;
 
-	Energy.label = Form1->EnergyLabel;
+//	Energy.label = Form1->EnergyLabel;
 //    TStringGridCellInfo tmpInf = GetGridDetails(StringGrid1);
 //    TButton *tmpButtonData = nullptr;
 //    for (int i = 0; i < 0; i++)
@@ -475,7 +537,19 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
     }
 
 
-    VectorToGrid(CVMemoryArray, memoryGrid, 0, 10);         // Отобразили на экране
+	VectorToGrid(CVMemoryArray, memoryGrid, 0, 10);         // Отобразили на экране
+
+	Energy.label = Form1->energyLabel;
+	Capacity.label = Form1->batteryCapacity;
+	storage::LoadModels(ComboBox1, "Models.ini");
+	storage::SetModel(engine, ComboBox1->Text, "Models.ini");
+
+
+//--------------------------------------------------------------------------
+	// При создании формы  сброс времени цикла и флага цикла
+
+//	cycleRunning = false;
+//	ResetCycleTime();
 
 }
 //---------------------------------------------------------------------------
@@ -520,7 +594,7 @@ void __fastcall TForm1::ToggleSwitch2Click(TObject *Sender)
        return;
     }
 if (!engine.Connected()) {
-           setOutSwitchOff();
+		   setOutSwitchOff();
            engine_logic::debug("ENgine not connected");
            return;
 }
@@ -528,20 +602,12 @@ bool now_enabled = ToggleSwitch2->State == tssOn ;
 engine_logic::trace("Now out switch is " + std::string(now_enabled? "on" : "off"));
  engine.SetOutput(now_enabled);
  engine_logic::trace(
-                     std::string("Output has been set in state ") +
-                     std::string(now_enabled ? "on" : "off")
-                     );
+					 std::string("Output has been set in state ") +
+					 std::string(now_enabled ? "on" : "off")
+					 );
  now_enabled? setOutSwitchOff() : setOutSwitchOn();  // АПДЕЙТ В ТАЙМЕРЕ !!!
 }
-//--------------------------------------------------------------------------
 
-/**
- * @brief Инвертирует состояние переключателя ToggleSwitch1 при клике на метку Label8.
- */
-void __fastcall TForm1::Label8Click(TObject *Sender)
-{
-    ToggleSwitch1Click(this);
-}
 //---------------------------------------------------------------------------
 /**
  * @brief Обновляет метку LabelSelectedPort при выборе нового COM-порта в ComboBoxComPorts.
@@ -590,14 +656,26 @@ void __fastcall TForm1::ButtonRefreshPortsClick(TObject *Sender)
 
 void __fastcall TForm1::Edit9Exit(TObject *Sender)
 {
-    Edit9->Text = StringReplace(Edit9->Text, ".", ",", TReplaceFlags() << rfReplaceAll);
+	Edit9->Text = StringReplace(Edit9->Text, ".", ",", TReplaceFlags() << rfReplaceAll);
     String tmp_data =  Edit9->Text;
     if (tmp_data == "")
         return;
-        try {
-            ScrollBar2->Position = /*ScrollBar2->Max - */StrToFloat(tmp_data) * 100;
-            Edit9->Text = formatValue_c(ScrollBar2->Position / 100.0f, 4, 2);
-        } catch (...) {
+		try {
+				float min = ScrollBar2->Min, max = ScrollBar2->Max;
+				float final_value = StrToFloat(tmp_data);
+				// 1. Убираем деление на 100
+				float value_scaled = final_value * 100;
+
+				// 2. Обратное линейное преобразование (находим value после pow)
+				float value_after_pow = (value_scaled - min) / (max - min);
+
+				// 3. Обратная степень (извлекаем корень степени VCurve)
+				float norm_value = pow(value_after_pow, 1.0f / VCurve);
+
+				// 4. Находим исходный pos
+				int pos = norm_value * (max - min) + min;
+				ScrollBar2->Position =  pos;
+		} catch (...) {
           ShowMessage("Incorrect  voltage value");
         }
 }
@@ -613,14 +691,28 @@ void __fastcall TForm1::Edit9KeyDown(TObject *Sender, WORD &Key, TShiftState Shi
 
 void __fastcall TForm1::Edit8Exit(TObject *Sender)
 {
-    Edit8->Text = StringReplace(Edit8->Text, ".", ",", TReplaceFlags() << rfReplaceAll);
+	Edit8->Text = StringReplace(Edit8->Text, ".", ",", TReplaceFlags() << rfReplaceAll);
     String tmp_data = Edit8->Text;
     if (tmp_data == "")
         return;
-    try {
-               ScrollBar1->Position = /*ScrollBar1->Max - */ StrToFloat(tmp_data) * 100;
-               Edit8->Text = formatValue_c(ScrollBar1->Position / 100.0f, 4, 2);
-    } catch (...) {
+	try {
+//			   Text = formatValue_c(ScrollBar1->Position / 100.0f, 4, 2);
+				float min = ScrollBar1->Min, max = ScrollBar1->Max;
+				float final_value = StrToFloat(tmp_data);
+				// 1. Убираем деление на 100
+				float value_scaled = final_value * 100;
+
+				// 2. Обратное линейное преобразование (находим value после pow)
+				float value_after_pow = (value_scaled - min) / (max - min);
+
+				// 3. Обратная степень (извлекаем корень степени VCurve)
+				float norm_value = pow(value_after_pow, 1.0f / VCurve);
+
+				// 4. Находим исходный pos
+				int pos = norm_value * (max - min) + min;
+				ScrollBar1->Position =  pos;
+
+	} catch (...) {
       ShowMessage("Invalid current value");
     }
 }
@@ -711,4 +803,38 @@ void __fastcall TForm1::SaveMemGridClick(TObject *Sender)
 storage::SavePresetsToDisk("ManuallySavedData.ini", CVMemoryArray);
 }
 //---------------------------------------------------------------------------
+
+
+
+// Сброс времени цикла
+void __fastcall TForm1::UpdateCycleTimeLabel()
+{
+	if (CycleTimeLabelTimer.check()) {
+		LastCycleDurationValue = CycleTimeLabelTimer.TimeToVector();
+		LastCycleDurationValue.pop_back();
+		Button1->Caption = "yes";
+	}   else {
+         Button1->Caption = "No";
+    }
+    CycleTimeLabel->Caption = TimeNowString(LastCycleDurationValue).c_str();
+	return ;
+
+
+}
+
+
+
+void __fastcall TForm1::ComboBox1Change(TObject *Sender)
+{
+    // Проверяем, что в комбобоксе что-то выбрано
+    if (ComboBox1->ItemIndex != -1)
+	{
+		storage::SetModel(engine, ComboBox1->Text, "Models.ini");
+
+    }
+}
+
+//---------------------------------------------------------------------------
+
+
 

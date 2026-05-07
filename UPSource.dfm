@@ -1,16 +1,15 @@
 object Form1: TForm1
   Left = 0
-  Top = 0
+  Top = 10
   Margins.Left = 50
   Margins.Top = 50
   Margins.Right = 10
   Margins.Bottom = 10
   Anchors = [akLeft, akTop, akRight, akBottom]
-  BorderStyle = bsSingle
-  BorderWidth = 1
+  BorderWidth = 3
   Caption = 'PowerSource interface'
-  ClientHeight = 791
-  ClientWidth = 1538
+  ClientHeight = 838
+  ClientWidth = 1394
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -22,62 +21,11 @@ object Form1: TForm1
   OnClose = FormClose
   OnCreate = FormCreate
   TextHeight = 38
-  object Label7: TLabel
-    Left = 889
-    Top = 876
-    Width = 103
-    Height = 37
-    Margins.Left = 5
-    Margins.Top = 5
-    Margins.Right = 5
-    Margins.Bottom = 5
-    Caption = 'Lock off'
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clRed
-    Font.Height = -27
-    Font.Name = 'Segoe UI'
-    Font.Style = [fsBold]
-    ParentFont = False
-    Visible = False
-  end
-  object Label5: TLabel
-    Left = 1152
-    Top = 843
-    Width = 132
-    Height = 38
-    Margins.Left = 5
-    Margins.Top = 5
-    Margins.Right = 5
-    Margins.Bottom = 5
-    Caption = 'Stab mode'
-  end
-  object Label6: TLabel
-    Left = 1032
-    Top = 843
-    Width = 83
-    Height = 38
-    Margins.Left = 5
-    Margins.Top = 5
-    Margins.Right = 5
-    Margins.Bottom = 5
-    Caption = 'Queue'
-  end
-  object Label12: TLabel
-    Left = 1428
-    Top = 1032
-    Width = 95
-    Height = 38
-    Margins.Left = 5
-    Margins.Top = 5
-    Margins.Right = 5
-    Margins.Bottom = 5
-    Caption = 'Label12'
-  end
   object Chart1: TChart
-    Left = 8
-    Top = 523
+    Left = 0
+    Top = 600
     Width = 441
-    Height = 260
+    Height = 243
     Legend.Visible = False
     MarginBottom = 0
     MarginLeft = 0
@@ -107,10 +55,10 @@ object Form1: TForm1
     end
   end
   object Chart2: TChart
-    Left = 912
-    Top = 555
-    Width = 393
-    Height = 228
+    Left = 454
+    Top = 600
+    Width = 446
+    Height = 243
     Legend.Visible = False
     MarginBottom = 0
     MarginLeft = 0
@@ -140,52 +88,20 @@ object Form1: TForm1
     end
   end
   object Button2: TButton
-    Left = 1364
-    Top = 568
+    Left = 1070
+    Top = 799
     Width = 152
     Height = 39
     Caption = 'DropErrors'
     TabOrder = 2
     OnClick = Button2Click
   end
-  object memoryGrid: TStringGrid
-    Left = 868
-    Top = 36
-    Width = 205
-    Height = 412
-    Margins.Left = 5
-    Margins.Top = 5
-    Margins.Right = 5
-    Margins.Bottom = 5
-    ColCount = 3
-    DefaultColWidth = 70
-    DefaultColAlignment = taRightJustify
-    DefaultRowHeight = 36
-    RowCount = 11
-    Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goDrawFocusSelected, goRowSelect, goFixedRowDefAlign]
-    ScrollBars = ssNone
-    TabOrder = 3
-    OnKeyDown = memoryGridKeyDown
-    OnMouseDown = memoryGridMouseDown
-    RowHeights = (
-      36
-      36
-      36
-      38
-      36
-      36
-      36
-      36
-      36
-      36
-      36)
-  end
   object StringGrid2: TStringGrid
     AlignWithMargins = True
-    Left = 1083
-    Top = 3
+    Left = 930
+    Top = 10
     Width = 454
-    Height = 474
+    Height = 615
     Margins.Left = 5
     Margins.Top = 5
     Margins.Right = 5
@@ -195,12 +111,12 @@ object Form1: TForm1
     RowCount = 20
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goDrawFocusSelected, goEditing, goFixedRowDefAlign]
     ScrollBars = ssVertical
-    TabOrder = 4
+    TabOrder = 3
     OnKeyDown = memoryGridKeyDown
   end
   object Button4: TButton
-    Left = 1364
-    Top = 512
+    Left = 1230
+    Top = 801
     Width = 152
     Height = 35
     Margins.Left = 5
@@ -208,24 +124,46 @@ object Form1: TForm1
     Margins.Right = 5
     Margins.Bottom = 5
     Caption = 'DropState'
-    TabOrder = 5
+    TabOrder = 4
     OnClick = Button4Click
   end
   object pnlStattic: TPanel
-    Left = 16
-    Top = 119
-    Width = 620
-    Height = 396
+    Left = 10
+    Top = 133
+    Width = 890
+    Height = 420
     Margins.Left = 5
     Margins.Top = 5
     Margins.Right = 5
     Margins.Bottom = 5
-    BevelOuter = bvNone
-    BorderWidth = 1
-    TabOrder = 6
+    BevelWidth = 6
+    TabOrder = 5
+    DesignSize = (
+      890
+      420)
+    object CycleTimeLabel: TLabel
+      Left = 25
+      Top = 362
+      Width = 137
+      Height = 45
+      Margins.Left = 5
+      Margins.Top = 5
+      Margins.Right = 5
+      Margins.Bottom = 5
+      Alignment = taCenter
+      Anchors = []
+      AutoSize = False
+      Caption = '00:00:12'
+      Font.Charset = RUSSIAN_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -32
+      Font.Name = 'Segoe UI'
+      Font.Style = [fsBold, fsItalic]
+      ParentFont = False
+    end
     object Panel4: TPanel
-      Left = 1
-      Top = 1
+      Left = 8
+      Top = 8
       Width = 300
       Height = 100
       Margins.Left = 8
@@ -234,29 +172,36 @@ object Form1: TForm1
       Margins.Bottom = 8
       BevelWidth = 3
       TabOrder = 0
+      DesignSize = (
+        300
+        100)
       object Label3: TLabel
         Left = 234
-        Top = -10
-        Width = 53
-        Height = 106
+        Top = 6
+        Width = 48
+        Height = 76
         Margins.Left = 5
         Margins.Top = 5
         Margins.Right = 5
         Margins.Bottom = 5
+        Alignment = taRightJustify
+        Anchors = []
+        AutoSize = False
         Caption = 'V'
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clBlack
-        Font.Height = -80
+        Font.Height = -72
         Font.Name = 'Segoe UI'
         Font.Style = [fsBold]
         ParentFont = False
         Layout = tlCenter
+        StyleElements = []
       end
       object voltageValue: TLabel
         Left = 2
-        Top = -7
+        Top = -8
         Width = 222
-        Height = 96
+        Height = 94
         Margins.Left = 5
         Margins.Top = 5
         Margins.Right = 5
@@ -265,7 +210,7 @@ object Form1: TForm1
         AutoSize = False
         Caption = '0.000'
         Font.Charset = DEFAULT_CHARSET
-        Font.Color = clBlack
+        Font.Color = clNavy
         Font.Height = -80
         Font.Name = 'Segoe UI'
         Font.Style = [fsBold]
@@ -275,8 +220,8 @@ object Form1: TForm1
       end
     end
     object Panel3: TPanel
-      Left = 317
-      Top = 2
+      Left = 320
+      Top = 8
       Width = 300
       Height = 100
       Margins.Left = 8
@@ -289,10 +234,10 @@ object Form1: TForm1
         300
         100)
       object currentValue: TLabel
-        Left = -3
-        Top = -7
+        Left = 2
+        Top = -8
         Width = 222
-        Height = 98
+        Height = 94
         Margins.Left = 5
         Margins.Top = 5
         Margins.Right = 5
@@ -302,7 +247,7 @@ object Form1: TForm1
         AutoSize = False
         Caption = '0.000'
         Font.Charset = DEFAULT_CHARSET
-        Font.Color = clBlack
+        Font.Color = clMaroon
         Font.Height = -80
         Font.Name = 'Segoe UI'
         Font.Style = [fsBold]
@@ -312,26 +257,31 @@ object Form1: TForm1
       end
       object Label4: TLabel
         Left = 229
-        Top = -11
-        Width = 56
-        Height = 106
+        Top = 6
+        Width = 52
+        Height = 76
         Margins.Left = 5
         Margins.Top = 5
         Margins.Right = 5
         Margins.Bottom = 5
+        Alignment = taRightJustify
+        AutoSize = False
+        BiDiMode = bdLeftToRight
         Caption = 'A'
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clBlack
-        Font.Height = -80
+        Font.Height = -72
         Font.Name = 'Segoe UI'
         Font.Style = [fsBold]
+        ParentBiDiMode = False
         ParentFont = False
         Layout = tlCenter
+        StyleElements = []
       end
     end
     object Panel1: TPanel
-      Left = 317
-      Top = 109
+      Left = 320
+      Top = 120
       Width = 300
       Height = 150
       Margins.Left = 0
@@ -362,7 +312,8 @@ object Form1: TForm1
         Font.Style = [fsItalic]
         ParentFont = False
         Layout = tlCenter
-        ExplicitHeight = 109
+        ExplicitLeft = 230
+        ExplicitTop = 6
       end
       object Edit8: TEdit
         Left = 5
@@ -408,8 +359,8 @@ object Form1: TForm1
       end
     end
     object Panel2: TPanel
-      Left = 0
-      Top = 109
+      Left = 8
+      Top = 120
       Width = 300
       Height = 150
       Margins.Left = 0
@@ -490,118 +441,127 @@ object Form1: TForm1
       end
     end
     object ToggleSwitch2: TToggleSwitch
-      Left = 13
-      Top = 282
-      Width = 590
-      Height = 103
-      Margins.Left = 5
-      Margins.Top = 5
-      Margins.Right = 5
-      Margins.Bottom = 5
+      Left = 33
+      Top = 279
+      Width = 272
+      Margins.Left = 12
+      Margins.Top = 12
+      Margins.Right = 12
+      Margins.Bottom = 12
       AutoSize = False
       Color = clGray
       DisabledColor = clBlue
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clBlack
-      Font.Height = -40
+      Font.Height = -28
       Font.Name = 'Segoe UI'
-      Font.Style = []
+      Font.Style = [fsBold]
       FrameColor = clGray
       ParentFont = False
       StateCaptions.CaptionOn = '   '#1042#1050#1051
       StateCaptions.CaptionOff = #1042#1067#1050#1051
-      StyleElements = [seClient, seBorder]
-      SwitchHeight = 80
-      SwitchWidth = 480
+      StyleElements = [seBorder]
+      SwitchHeight = 50
+      SwitchWidth = 180
       TabOrder = 4
       ThumbColor = clBlack
       ThumbWidth = 0
       OnClick = ToggleSwitch2Click
     end
-  end
-  object pnlCalkParam: TPanel
-    Left = 640
-    Top = 119
-    Width = 223
-    Height = 386
-    Margins.Left = 5
-    Margins.Top = 5
-    Margins.Right = 5
-    Margins.Bottom = 5
-    BevelInner = bvLowered
-    BevelWidth = 2
-    TabOrder = 7
-    object Time: TLabel
-      Left = 4
-      Top = 4
-      Width = 215
-      Height = 54
-      Margins.Left = 2
-      Margins.Top = 2
-      Margins.Right = 2
-      Margins.Bottom = 2
-      Align = alTop
-      Alignment = taCenter
-      Caption = 'time'
-      Color = clBlack
-      Font.Charset = RUSSIAN_CHARSET
-      Font.Color = clWindowText
-      Font.Height = -40
-      Font.Name = 'Segoe UI Semibold'
-      Font.Style = [fsBold]
-      ParentColor = False
-      ParentFont = False
-      ExplicitLeft = 3
-      ExplicitTop = 2
-    end
     object Power: TPanel
-      Left = 4
-      Top = 58
-      Width = 215
-      Height = 63
-      Margins.Left = 5
-      Margins.Top = 5
-      Margins.Right = 5
-      Margins.Bottom = 5
-      Align = alTop
-      TabOrder = 0
-      ExplicitLeft = 6
-      ExplicitTop = 65
+      Left = 320
+      Top = 274
+      Width = 300
+      Height = 40
+      Margins.Left = 8
+      Margins.Top = 8
+      Margins.Right = 8
+      Margins.Bottom = 8
+      TabOrder = 5
       object powerValue: TLabel
-        Left = 1
+        Left = 40
         Top = 1
-        Width = 128
-        Height = 61
-        Margins.Left = 18
-        Margins.Top = 18
-        Margins.Right = 18
-        Margins.Bottom = 18
-        Align = alLeft
+        Width = 150
+        Height = 40
+        Margins.Left = 27
+        Margins.Top = 27
+        Margins.Right = 27
+        Margins.Bottom = 27
         AutoSize = False
         BiDiMode = bdRightToLeft
         Caption = 'powerValue'
         Font.Charset = RUSSIAN_CHARSET
         Font.Color = clWindowText
-        Font.Height = -40
+        Font.Height = -24
         Font.Name = 'Segoe UI'
         Font.Style = [fsBold]
         ParentBiDiMode = False
         ParentFont = False
       end
       object W: TLabel
-        Left = 152
+        Left = 220
         Top = 1
-        Width = 40
-        Height = 54
-        Margins.Left = 12
-        Margins.Top = 12
-        Margins.Right = 12
-        Margins.Bottom = 12
+        Width = 24
+        Height = 32
+        Margins.Left = 18
+        Margins.Top = 18
+        Margins.Right = 18
+        Margins.Bottom = 18
         BiDiMode = bdLeftToRight
         Caption = 'W'
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
-        Font.Height = -40
+        Font.Height = -24
+        Font.Name = 'Segoe UI'
+        Font.Style = [fsBold]
+        ParentBiDiMode = False
+        ParentFont = False
+      end
+    end
+    object Panel5: TPanel
+      Left = 320
+      Top = 320
+      Width = 300
+      Height = 40
+      Margins.Left = 8
+      Margins.Top = 8
+      Margins.Right = 8
+      Margins.Bottom = 8
+      TabOrder = 6
+      object energyLabel: TLabel
+        Left = 40
+        Top = 1
+        Width = 150
+        Height = 40
+        Margins.Left = 27
+        Margins.Top = 27
+        Margins.Right = 27
+        Margins.Bottom = 27
+        AutoSize = False
+        BiDiMode = bdRightToLeft
+        Caption = 'Energy'
+        Font.Charset = RUSSIAN_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -24
+        Font.Name = 'Segoe UI'
+        Font.Style = [fsBold]
+        ParentBiDiMode = False
+        ParentFont = False
+      end
+      object Wh: TLabel
+        Left = 216
+        Top = 1
+        Width = 38
+        Height = 32
+        Margins.Left = 18
+        Margins.Top = 18
+        Margins.Right = 18
+        Margins.Bottom = 18
+        BiDiMode = bdLeftToRight
+        Caption = 'Wh'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -24
         Font.Name = 'Segoe UI'
         Font.Style = [fsBold]
         ParentBiDiMode = False
@@ -609,257 +569,384 @@ object Form1: TForm1
       end
     end
     object Panel10: TPanel
-      Left = 4
-      Top = 121
-      Width = 215
-      Height = 62
-      Margins.Left = 5
-      Margins.Top = 5
-      Margins.Right = 5
-      Margins.Bottom = 5
-      Align = alTop
-      TabOrder = 1
-      ExplicitLeft = 6
-      ExplicitTop = 143
-      object EnergyLabel: TLabel
-        Left = 1
+      Left = 320
+      Top = 366
+      Width = 300
+      Height = 40
+      Margins.Left = 8
+      Margins.Top = 8
+      Margins.Right = 8
+      Margins.Bottom = 8
+      TabOrder = 7
+      object batteryCapacity: TLabel
+        Left = 40
         Top = 1
-        Width = 128
-        Height = 60
-        Margins.Left = 18
-        Margins.Top = 18
-        Margins.Right = 18
-        Margins.Bottom = 18
-        Align = alLeft
+        Width = 150
+        Height = 40
+        Margins.Left = 27
+        Margins.Top = 27
+        Margins.Right = 27
+        Margins.Bottom = 27
         AutoSize = False
         BiDiMode = bdRightToLeft
-        Caption = 'Energy'
+        Caption = 'batt capacity'
         Font.Charset = RUSSIAN_CHARSET
         Font.Color = clWindowText
-        Font.Height = -40
+        Font.Height = -24
         Font.Name = 'Segoe UI'
         Font.Style = [fsBold]
         ParentBiDiMode = False
         ParentFont = False
-        ExplicitLeft = 9
-        ExplicitTop = 2
       end
       object Label9: TLabel
-        Left = 144
-        Top = 0
-        Width = 64
-        Height = 54
-        Margins.Left = 12
-        Margins.Top = 12
-        Margins.Right = 12
-        Margins.Bottom = 12
+        Left = 222
+        Top = 1
+        Width = 31
+        Height = 32
+        Margins.Left = 18
+        Margins.Top = 18
+        Margins.Right = 18
+        Margins.Bottom = 18
         BiDiMode = bdLeftToRight
-        Caption = 'Wh'
+        Caption = 'Ah'
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
-        Font.Height = -40
+        Font.Height = -24
         Font.Name = 'Segoe UI'
         Font.Style = [fsBold]
         ParentBiDiMode = False
         ParentFont = False
       end
     end
-  end
-  object gbDeviceSelect: TGroupBox
-    Left = 24
-    Top = 3
-    Width = 244
-    Height = 92
-    Margins.Left = 5
-    Margins.Top = 5
-    Margins.Right = 5
-    Margins.Bottom = 5
-    BiDiMode = bdLeftToRight
-    Caption = #1042#1099#1073#1086#1088' '#1091#1089#1090#1088#1086#1081#1089#1090#1074#1072
-    Color = clBtnFace
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -28
-    Font.Name = 'Segoe UI'
-    Font.Style = []
-    ParentBackground = False
-    ParentBiDiMode = False
-    ParentColor = False
-    ParentFont = False
-    TabOrder = 8
-    DesignSize = (
-      244
-      92)
-    object ComboBox1: TComboBox
-      Left = 33
-      Top = 38
-      Width = 193
-      Height = 46
+    object memoryGrid: TStringGrid
+      Left = 644
+      Top = 8
+      Width = 204
+      Height = 366
       Margins.Left = 8
       Margins.Top = 8
       Margins.Right = 8
       Margins.Bottom = 8
-      Anchors = [akLeft, akTop, akRight, akBottom]
+      BevelWidth = 6
+      ColCount = 3
+      DefaultColWidth = 70
+      DefaultColAlignment = taRightJustify
+      DefaultRowHeight = 32
+      RowCount = 11
+      Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goDrawFocusSelected, goRowSelect, goFixedRowDefAlign]
+      ScrollBars = ssNone
+      TabOrder = 8
+      OnKeyDown = memoryGridKeyDown
+      OnMouseDown = memoryGridMouseDown
+      RowHeights = (
+        32
+        32
+        32
+        32
+        32
+        32
+        32
+        32
+        32
+        32
+        32)
+    end
+    object SaveMemGrid: TButton
+      Left = 644
+      Top = 375
+      Width = 204
+      Height = 30
+      Margins.Left = 8
+      Margins.Top = 8
+      Margins.Right = 8
+      Margins.Bottom = 8
+      Caption = 'SaveMemGrid'
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -24
+      Font.Name = 'Segoe UI'
+      Font.Style = []
+      ParentFont = False
+      TabOrder = 9
+      OnClick = SaveMemGridClick
+    end
+    object SaweSeans: TButton
+      Left = 175
+      Top = 368
+      Width = 129
+      Height = 34
+      Margins.Left = 8
+      Margins.Top = 8
+      Margins.Right = 8
+      Margins.Bottom = 8
+      Caption = 'SaweSeans'
+      Font.Charset = RUSSIAN_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -20
+      Font.Name = 'Segoe UI Semibold'
+      Font.Style = [fsBold]
+      ParentFont = False
+      TabOrder = 10
+    end
+  end
+  object pnlCalkParam: TPanel
+    Left = 1143
+    Top = 635
+    Width = 239
+    Height = 156
+    Margins.Left = 5
+    Margins.Top = 5
+    Margins.Right = 5
+    Margins.Bottom = 5
+    BevelInner = bvLowered
+    BevelWidth = 6
+    TabOrder = 6
+    object Time: TLabel
+      Left = 12
+      Top = 12
+      Width = 215
+      Height = 70
+      Margins.Left = 2
+      Margins.Top = 2
+      Margins.Right = 2
+      Margins.Bottom = 2
+      Align = alTop
+      Alignment = taCenter
+      Caption = 'time'
+      Color = clNavy
+      Font.Charset = RUSSIAN_CHARSET
+      Font.Color = clNavy
+      Font.Height = -52
+      Font.Name = 'Segoe UI'
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+      StyleElements = [seBorder]
+      ExplicitWidth = 111
+    end
+  end
+  object pnlComm: TPanel
+    Left = 8
+    Top = 8
+    Width = 891
+    Height = 115
+    Margins.Left = 5
+    Margins.Top = 5
+    Margins.Right = 5
+    Margins.Bottom = 5
+    BevelWidth = 6
+    TabOrder = 7
+    object gbConnection: TGroupBox
+      Left = 613
+      Top = 6
+      Width = 202
+      Height = 92
+      Margins.Left = 5
+      Margins.Top = 5
+      Margins.Right = 5
+      Margins.Bottom = 5
+      BiDiMode = bdLeftToRight
+      Caption = #1055#1086#1076#1082#1083#1102#1095#1077#1085#1080#1077
+      Color = clBtnFace
+      DefaultHeaderFont = False
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -27
+      Font.Name = 'Segoe UI'
+      Font.Style = []
+      HeaderFont.Charset = DEFAULT_CHARSET
+      HeaderFont.Color = clWindowText
+      HeaderFont.Height = -28
+      HeaderFont.Name = 'Segoe UI'
+      HeaderFont.Style = []
+      ParentBackground = False
+      ParentBiDiMode = False
+      ParentColor = False
+      ParentFont = False
+      TabOrder = 0
+      object ToggleSwitch1: TToggleSwitch
+        Left = 17
+        Top = 38
+        Width = 185
+        Height = 46
+        Margins.Left = 5
+        Margins.Top = 5
+        Margins.Right = 5
+        Margins.Bottom = 5
+        AutoSize = False
+        Color = clGray
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -24
+        Font.Name = 'Segoe UI'
+        Font.Style = [fsBold]
+        ParentFont = False
+        StateCaptions.CaptionOn = #1055#1054#1044#1050#1051
+        StateCaptions.CaptionOff = '   '#1054#1058#1050#1051
+        SwitchHeight = 38
+        SwitchWidth = 70
+        TabOrder = 0
+        ThumbWidth = 0
+        OnClick = ToggleSwitch1Click
+      end
+    end
+    object gbDeviceSelect: TGroupBox
+      Left = 9
+      Top = 6
+      Width = 244
+      Height = 92
+      Margins.Left = 5
+      Margins.Top = 5
+      Margins.Right = 5
+      Margins.Bottom = 5
+      BiDiMode = bdLeftToRight
+      Caption = #1042#1099#1073#1086#1088' '#1091#1089#1090#1088#1086#1081#1089#1090#1074#1072
+      Color = clBtnFace
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
       Font.Height = -28
       Font.Name = 'Segoe UI'
       Font.Style = []
+      ParentBackground = False
+      ParentBiDiMode = False
+      ParentColor = False
       ParentFont = False
-      TabOrder = 0
-      Text = 'SPPS3001D'
-      Items.Strings = (
-        'SPPS3001D')
+      TabOrder = 2
+      DesignSize = (
+        244
+        92)
+      object ComboBox1: TComboBox
+        Left = 33
+        Top = 38
+        Width = 193
+        Height = 46
+        Margins.Left = 8
+        Margins.Top = 8
+        Margins.Right = 8
+        Margins.Bottom = 8
+        Anchors = [akLeft, akTop, akRight, akBottom]
+        Ctl3D = False
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -28
+        Font.Name = 'Segoe UI'
+        Font.Style = []
+        ParentCtl3D = False
+        ParentFont = False
+        TabOrder = 0
+        Text = 'SPPS3001D'
+        OnChange = ComboBox1Change
+        Items.Strings = (
+          'SPPS3001D')
+      end
+    end
+    object gbCommPortSelect: TGroupBox
+      Left = 263
+      Top = 6
+      Width = 340
+      Height = 92
+      Margins.Left = 5
+      Margins.Top = 5
+      Margins.Right = 5
+      Margins.Bottom = 5
+      BiDiMode = bdLeftToRight
+      Caption = #1042#1099#1073#1086#1088' '#1087#1086#1088#1090#1072' '
+      Color = clBtnFace
+      Ctl3D = True
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clBlack
+      Font.Height = -28
+      Font.Name = 'Segoe UI'
+      Font.Style = []
+      ParentBackground = False
+      ParentBiDiMode = False
+      ParentColor = False
+      ParentCtl3D = False
+      ParentFont = False
+      TabOrder = 1
+      DesignSize = (
+        340
+        92)
+      object ComboBoxComPorts: TComboBox
+        Left = 8
+        Top = 38
+        Width = 162
+        Height = 46
+        Margins.Left = 8
+        Margins.Top = 8
+        Margins.Right = 8
+        Margins.Bottom = 8
+        AutoComplete = False
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -28
+        Font.Name = 'Segoe UI'
+        Font.Style = []
+        ParentFont = False
+        TabOrder = 0
+        Text = 'ComboBoxComPorts'
+      end
+      object ButtonRefreshPorts: TButton
+        Left = 182
+        Top = 38
+        Width = 147
+        Height = 46
+        Margins.Left = 5
+        Margins.Top = 5
+        Margins.Right = 5
+        Margins.Bottom = 5
+        Anchors = [akLeft, akTop, akRight, akBottom]
+        Caption = #1054#1073#1085#1086#1074#1080#1090#1100
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -28
+        Font.Name = 'Segoe UI'
+        Font.Style = []
+        ParentFont = False
+        TabOrder = 1
+        OnClick = ButtonRefreshPortsClick
+      end
     end
   end
-  object SaveMemGrid: TButton
-    Left = 868
-    Top = 447
-    Width = 205
+  object Button1: TButton
+    Left = 944
+    Top = 737
+    Width = 113
     Height = 38
     Margins.Left = 5
     Margins.Top = 5
     Margins.Right = 5
     Margins.Bottom = 5
-    Caption = 'SaveMemGrid'
-    TabOrder = 11
-    OnClick = SaveMemGridClick
+    Caption = 'Button1'
+    TabOrder = 8
+    OnClick = Button1Click
   end
-  object gbCommPortSelect: TGroupBox
-    Left = 288
-    Top = 3
-    Width = 340
-    Height = 92
+  object discret: TEdit
+    Left = 211
+    Top = 556
+    Width = 137
+    Height = 36
     Margins.Left = 5
     Margins.Top = 5
     Margins.Right = 5
     Margins.Bottom = 5
-    BiDiMode = bdLeftToRight
-    Caption = #1042#1099#1073#1086#1088' '#1087#1086#1088#1090#1072' '
-    Color = clBtnFace
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
-    Font.Height = -27
+    Font.Height = -20
     Font.Name = 'Segoe UI'
     Font.Style = []
-    ParentBackground = False
-    ParentBiDiMode = False
-    ParentColor = False
     ParentFont = False
     TabOrder = 9
-    DesignSize = (
-      340
-      92)
-    object ComboBoxComPorts: TComboBox
-      Left = 8
-      Top = 38
-      Width = 162
-      Height = 46
-      Margins.Left = 8
-      Margins.Top = 8
-      Margins.Right = 8
-      Margins.Bottom = 8
-      AutoComplete = False
-      Font.Charset = DEFAULT_CHARSET
-      Font.Color = clWindowText
-      Font.Height = -28
-      Font.Name = 'Segoe UI'
-      Font.Style = []
-      ParentFont = False
-      TabOrder = 0
-      Text = 'ComboBoxComPorts'
-    end
-    object ButtonRefreshPorts: TButton
-      Left = 182
-      Top = 38
-      Width = 147
-      Height = 46
-      Margins.Left = 5
-      Margins.Top = 5
-      Margins.Right = 5
-      Margins.Bottom = 5
-      Anchors = [akLeft, akTop, akRight, akBottom]
-      Caption = #1054#1073#1085#1086#1074#1080#1090#1100
-      Font.Charset = DEFAULT_CHARSET
-      Font.Color = clWindowText
-      Font.Height = -28
-      Font.Name = 'Segoe UI'
-      Font.Style = []
-      ParentFont = False
-      TabOrder = 1
-      OnClick = ButtonRefreshPortsClick
-    end
-  end
-  object gbConnecction: TGroupBox
-    Left = 647
-    Top = 3
-    Width = 202
-    Height = 92
-    Margins.Left = 5
-    Margins.Top = 5
-    Margins.Right = 5
-    Margins.Bottom = 5
-    BiDiMode = bdLeftToRight
-    Caption = #1055#1086#1076#1082#1083#1102#1095#1077#1085#1080#1077
-    Color = clBtnFace
-    DefaultHeaderFont = False
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -27
-    Font.Name = 'Segoe UI'
-    Font.Style = []
-    HeaderFont.Charset = DEFAULT_CHARSET
-    HeaderFont.Color = clWindowText
-    HeaderFont.Height = -28
-    HeaderFont.Name = 'Segoe UI'
-    HeaderFont.Style = []
-    ParentBackground = False
-    ParentBiDiMode = False
-    ParentColor = False
-    ParentFont = False
-    TabOrder = 10
-    object ToggleSwitch1: TToggleSwitch
-      Left = 17
-      Top = 41
-      Width = 185
-      Height = 46
-      Margins.Left = 5
-      Margins.Top = 5
-      Margins.Right = 5
-      Margins.Bottom = 5
-      AutoSize = False
-      Color = clGray
-      Font.Charset = DEFAULT_CHARSET
-      Font.Color = clWindowText
-      Font.Height = -28
-      Font.Name = 'Segoe UI'
-      Font.Style = []
-      ParentFont = False
-      StateCaptions.CaptionOn = #1055#1054#1044#1050#1051
-      StateCaptions.CaptionOff = '   '#1054#1058#1050#1051
-      SwitchHeight = 38
-      SwitchWidth = 70
-      TabOrder = 0
-      ThumbWidth = 0
-      OnClick = ToggleSwitch1Click
-    end
-  end
-  object GroupBox1: TGroupBox
-    Left = 491
-    Top = 568
-    Width = 278
-    Height = 158
-    Margins.Left = 5
-    Margins.Top = 5
-    Margins.Right = 5
-    Margins.Bottom = 5
-    Caption = 'GroupBox1'
-    TabOrder = 12
+    Text = 'discret(sec)'
   end
   object Timer1: TTimer
     Interval = 100
     OnTimer = Timer1Timer
-    Left = 680
-    Top = 160
+    Left = 976
+    Top = 680
+  end
+  object sdSaveSeans: TSaveDialog
+    Left = 440
+    Top = 560
   end
 end

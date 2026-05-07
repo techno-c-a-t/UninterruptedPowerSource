@@ -17,14 +17,15 @@ public:
     // Port(init_port);
     PowerSource(std::string init_port = "COM5") noexcept : Port(init_port) {};
 
-    // подключение (начало связи) с БП, повторяет Open из класса ComfPort
-    bool Connect(std::string comPort) noexcept;
 
-    // вызывает Connect(comPort) а затем SetLock(true)
+
+    // возвращает  Connect(comPort) && SetLock(true)
     bool Setup(std::string comPort) noexcept;
 
-    // разрыв связи с БП, повторяет Close из класса ComfPort
-    bool Disconnect() noexcept;
+    // пытается SetLock(False) и возвращает !Disconnect
+    bool Teardown() noexcept;
+
+
 
     /* Устанавливает значение тока
        Дожидается ответа
@@ -67,6 +68,10 @@ public:
     {
         return connection_state;
     }
+    State GetPortState() const noexcept
+    {
+        return port_state;
+    }
     Mode GetMode() const noexcept
     {
         return mode;
@@ -77,8 +82,18 @@ private:
     ComfPort Port;
     // состояния блокировки, подключения и выхода, а так же режим стабилизации
     State out_state = State::DISABLED, lock_state = State::DISABLED;
+
+    // connection - определяет буквально подключение
     State connection_state = State::DISABLED;
+    State port_state = State::DISABLED;
     Mode mode = Mode::VOLTAGE;
+
+    // разрыв связи с БП, повторяет Close из класса ComfPort
+    bool Disconnect() noexcept;
+
+    // подключение (начало связи) с БП, повторяет Open из класса ComfPort
+    bool Connect(std::string comPort) noexcept;
+
 
     // нужны для того чтобы не писать два раза в подсвете напряжения и тока
     static constexpr int ten_pows[6] = {100'000, 10'000, 1'000, 100, 10, 1};

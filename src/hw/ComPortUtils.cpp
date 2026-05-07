@@ -442,7 +442,7 @@ std::string ComfPort::Read(size_t DataLength) noexcept
     bytesRead = 0;
     if (!Opened)
     {
-        win_api_port::error("Port not opened");
+		win_api_port::error("Port not opened");
         return "";
     }
     if (DataLength == 0)

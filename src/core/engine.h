@@ -10,7 +10,6 @@
 #include <deque>
 #include <string>
 #include <vector>
-#
 
 
 // Включает замер времени выполнения каждой команды
@@ -105,8 +104,8 @@ private:
   PowerSource device;
   EngineMode currentMode = EngineMode::STABLE;
 
-  float maxC;
-  float maxV;
+  float maxC, maxV;
+  float minC, minV;
 
   // Реестр команд
   std::array<CommandSlot, static_cast<int>(CommandID::CMD_COUNT)>
@@ -140,15 +139,18 @@ private:
   // Шаблонный метод для добавления в очередь (реализован в cpp или header)
   void UpdateSlot(CommandID id, float val);
 
-public:
-  PSEngine(float maxVoltage, float maxCurrent);
 
-  void SetMaxCurrent(float maxCurrent) {
-    maxC =  maxCurrent;
-  }
-  void SetMaxVoltage(float maxVoltage) {
-    maxV =  maxVoltage;
-  }
+
+
+
+
+// Функции ядра  
+public:
+  PSEngine(float minVoltage, float minCurrent, float maxVoltage, float maxCurrent);
+
+  // Сохраняем обратную совместимость с конструктором от двух параметров с дефлотным нулем
+  PSEngine(float maxVoltage, float maxCurrent) : PSEngine(0.0f, 0.0f, maxVoltage, maxCurrent) {}; 
+
 
   // === API УПРАВЛЕНИЯ ===
 
@@ -189,6 +191,25 @@ public:
 
 
   void DropState() const noexcept;
+
+
+  
+  void SetMaxCurrent(float maxCurrent) noexcept {
+    maxC =  maxCurrent;
+  }
+
+  void SetMaxVoltage(float maxVoltage) noexcept {
+    maxV =  maxVoltage;
+  }
+
+  void SetMinCurrent(float minCurrent) noexcept {
+    minC =  minCurrent;
+  }
+
+  void SetMinVoltage(float minVoltage) noexcept {
+    minV =  minVoltage;
+  }
+
 };
 
 #endif

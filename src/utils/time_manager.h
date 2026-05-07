@@ -46,6 +46,22 @@ public:
         is_running = false;
         return result;
     }
+    std::vector<int> TimeToVector() const {
+        // 1. Получаем общее количество микросекунд через check()
+        uint64_t total_micros = check();
+        
+        // 2. Переводим в миллисекунды для удобства
+        uint64_t total_ms = total_micros / 1000;
+
+        // 3. Вычисляем компоненты времени
+        int hours   = static_cast<int>((total_ms / (1000 * 60 * 60)));
+        int minutes = static_cast<int>((total_ms / (1000 * 60)) % 60);
+        int seconds = static_cast<int>((total_ms / 1000) % 60);
+        int msec    = static_cast<int>(total_ms % 1000);
+
+        // 4. Возвращаем результат
+        return {hours, minutes, seconds, msec};
+    }
 
 private:
     clock_t::time_point start_point;
@@ -79,13 +95,17 @@ inline std::vector<int> TimeNowVector() {
     return std::vector<int> {hours, minutes, seconds, msec};
 }
 
-inline std::string TimeNowString (std::string delimiter = ":") {
-    const auto t_now = TimeNowVector();
+
+
+inline std::string TimeNowString (const std::vector<int>& t_now, std::string delimiter = ":") {
+    if (t_now.size() == 0) {
+        return "00:00:00E"; // error
+    }
     std::stringstream ss;
-    for (size_t i = 0; i + 2 < t_now.size(); i++) {
+    for (size_t i = 0; i < t_now.size() - 1; i++) {
             ss << std::setfill('0') << std::setw(2) << t_now.at(i) << delimiter;
     }
-    ss << std::setfill('0') << std::setw(2) << t_now.at(t_now.size() - 2);
+    ss << std::setfill('0') << std::setw(2) << t_now.at(t_now.size() - 1);
     return ss.str();
 
 }

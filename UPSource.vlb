@@ -1,17 +1,11 @@
 ﻿[Label2]
 Coordinates=174,280,53,58
 
-[Label5]
-Coordinates=405,144,53,58
-
 [Label3]
 Coordinates=302,280,53,58
 
 [Panel4]
 Coordinates=557,212,55,58
-
-[ComboBoxComPorts]
-Coordinates=10,10,135,124
 
 [Label1]
 Coordinates=129,348,53,58
@@ -34,17 +28,8 @@ Coordinates=410,348,74,36
 [Series1]
 Coordinates=619,419,58,36
 
-[Label12]
-Coordinates=463,280,60,58
-
 [Timer2]
 Coordinates=619,474,55,36
-
-[Label7]
-Coordinates=73,212,53,58
-
-[Label6]
-Coordinates=468,144,53,58
 
 [Button2]
 Coordinates=73,144,59,58
@@ -59,14 +44,8 @@ Coordinates=365,280,88,58
 [Edit9]
 Coordinates=10,348,44,58
 
-[ComboBox1]
-Coordinates=155,10,101,124
-
 [Timer1]
 Coordinates=600,527,55,36
-
-[ToggleSwitch1]
-Coordinates=301,348,99,36
 
 [Edit8]
 Coordinates=542,10,44,58
@@ -86,14 +65,11 @@ Coordinates=531,144,89,58
 [Label4]
 Coordinates=266,10,53,58
 
-[ButtonRefreshPorts]
-Coordinates=136,212,127,58
-
 [LineSeries1]
 Coordinates=511,527,83,36
 
 []
-Coordinates=335,144,60,58
+Coordinates=405,144,53,58
 
 [memoryGrid]
 Coordinates=596,10,80,58

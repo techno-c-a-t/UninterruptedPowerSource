@@ -29,8 +29,8 @@ std::vector<PSEngine::RuntimeError> PSEngine::ErrorLogBuffer::getAll() const {
 
 // === Реализация PSEngine ===
 
-PSEngine::PSEngine(float maxVoltage, float maxCurrent)
-    : maxV(maxVoltage), maxC(maxCurrent) {
+PSEngine::PSEngine(float minVoltage, float minCurrent, float maxVoltage, float maxCurrent)
+	: minV(minVoltage), minC(minCurrent), maxV(maxVoltage), maxC(maxCurrent) {
   // Инициализация слотов
   for (auto &slot : commandRegistry) {
     slot.payload = 0.0f;
@@ -73,25 +73,34 @@ void PSEngine::UpdateSlot(CommandID id, float val) {
 
 // === API Methods ===
 
-void PSEngine::SetTargetVoltage(float v, bool sync) {
+
+void PSEngine::SetTargetVoltage(float val, bool sync) {
   if (sync) {
-    
+    if (val <= maxV && val >= minV) {
+		device.SetVoltage(val);
+      } else {
+        pso_logic::warning("Discarded attempt to set voltage in sync mode out of [min, max] bounaties.");
+      }
   } else {
-    UpdateSlot(CommandID::CMD_SET_VOLTAGE, v);
+	UpdateSlot(CommandID::CMD_SET_VOLTAGE, val);
   }
 }
 
-void PSEngine::SetTargetCurrent(float a, bool sync) {
+void PSEngine::SetTargetCurrent(float val, bool sync) {
   if (sync) {
-
+    if (val <= maxC && val >= minC) {
+		device.SetCurrent(val);
+      } else {
+        pso_logic::warning("Discarded attempt to set current in sync mode out of [min, max] bounaties.");
+      }
   } else {
-    UpdateSlot(CommandID::CMD_SET_CURRENT, a);
+	UpdateSlot(CommandID::CMD_SET_CURRENT, val);
   }
 }
 
 void PSEngine::SetLock(bool enabled, bool sync) {
   if (sync) {
-
+	device.SetLock(enabled);
   } else {
     UpdateSlot(CommandID::CMD_SET_LOCK, enabled ? 1.0f : 0.0f);
   }
@@ -99,7 +108,7 @@ void PSEngine::SetLock(bool enabled, bool sync) {
 
 void PSEngine::SetOutput(bool enabled, bool sync) {
   if (sync) {
-
+	device.SetOut(enabled);
   } else {
     UpdateSlot(CommandID::CMD_SET_OUTPUT, enabled ? 1.0f : 0.0f);
   }
@@ -254,17 +263,17 @@ bool PSEngine::ExecuteCommand(CommandID id) {
   t.start();
   switch (id) {
   case CommandID::CMD_SET_VOLTAGE:
-    if (val <= maxV) {
+    if (val <= maxV && val >= minV) {
       return device.SetVoltage(val);
     } else {
-      pso_logic::warning("Discarded attempt to set voltage more than max.");
+      pso_logic::warning("Discarded attempt to set voltage out of [min, max] bounaties.");
     }
     return 0;
   case CommandID::CMD_SET_CURRENT:
-    if (val <= maxC) {
+    if (val <= maxC && val >= minC) {
       return device.SetCurrent(val);
     } else {
-      pso_logic::warning("Discarded attempt to set current more than max.");
+      pso_logic::warning("Discarded attempt to set current out of [min, max] bounaties.");
     }
     return 0;
   case CommandID::CMD_SET_OUTPUT:
@@ -274,7 +283,7 @@ bool PSEngine::ExecuteCommand(CommandID id) {
   case CommandID::CMD_CONNECT:
     return device.Setup(targetPortName); // Используем сохраненное имя
   case CommandID::CMD_DISCONNECT:
-    return device.Disconnect();
+	return device.Teardown();
   case CommandID::CMD_GET_VOLTAGE: {
     float tmp = device.GetVoltage();
     if (tmp >= 0) {
@@ -366,7 +375,7 @@ bool PSEngine::LockDisconnectSync() {
       // Не даем исключению прервать процесс дисконнекта
     }
   }
-  bool success = device.SetLock(false) && device.Disconnect();
+  bool success = device.Teardown();
   highQueue.clear();
   return success;
 }
