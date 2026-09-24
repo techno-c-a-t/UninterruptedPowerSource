@@ -1,6 +1,69 @@
 ﻿#include "engine.h"
 #include <chrono>
 
+
+void PSEngine::SetSessionCore(SessionCore *session) {
+  std::lock_guard<std::recursive_mutex> lock(engineMutex);
+  activeSessionCore = session;
+}
+
+unsigned int PSEngine::GetCalculatedStepMs() const {
+  uint32_t baud = device.GetSettings().BaudRate;
+  if (baud == 0) baud = 9600;
+  double transTimeMs = (280.0 * 1000.0) / static_cast<double>(baud);
+  unsigned int delayMs = static_cast<unsigned int>(transTimeMs + 15.0);
+  if (delayMs < 10) delayMs = 10;
+  if (delayMs > 200) delayMs = 200;
+  return delayMs;
+}
+
+void PSEngine::StartLoop() {
+  if (isRunning.load()) return;
+  isRunning = true;
+  workerThread = std::thread(&PSEngine::WorkerLoop, this);
+}
+
+void PSEngine::StopLoop() {
+  if (!isRunning.load()) return;
+  isRunning = false;
+  if (workerThread.joinable()) {
+    workerThread.join();
+  }
+}
+
+void PSEngine::WorkerLoop() {
+  auto next_wake = std::chrono::steady_clock::now();
+
+  while (isRunning.load()) {
+    unsigned int stepMs = GetCalculatedStepMs();
+    next_wake += std::chrono::milliseconds(stepMs);
+
+    float v = 0.0f;
+    float c = 0.0f;
+    uint64_t v_time = 0;
+    uint64_t c_time = 0;
+    bool isConn = false;
+
+    {
+      std::lock_guard<std::recursive_mutex> lock(engineMutex);
+      Tick();
+      isConn = Connected();
+      v = cachedVoltage;
+      c = cachedCurrent;
+      v_time = lastVoltageUpdate;
+      c_time = lastCurrentUpdate;
+    }
+
+    if (isConn && activeSessionCore && v_time > 0 && c_time > 0) {
+      uint64_t avg_time_us = (v_time + c_time) / 2;
+      activeSessionCore->Update(v, c, avg_time_us);
+    }
+
+    std::this_thread::sleep_until(next_wake);
+  }
+
+}
+
 // === Реализация ErrorLogBuffer ===
 
 void PSEngine::ErrorLogBuffer::push(CommandID cmd, const std::string &msg,
@@ -75,6 +138,7 @@ void PSEngine::UpdateSlot(CommandID id, float val) {
 
 
 void PSEngine::SetTargetVoltage(float val, bool sync) {
+  std::lock_guard<std::recursive_mutex> lock(engineMutex);
   if (sync) {
     if (val <= maxV && val >= minV) {
 		device.SetVoltage(val);
@@ -87,6 +151,7 @@ void PSEngine::SetTargetVoltage(float val, bool sync) {
 }
 
 void PSEngine::SetTargetCurrent(float val, bool sync) {
+  std::lock_guard<std::recursive_mutex> lock(engineMutex);
   if (sync) {
     if (val <= maxC && val >= minC) {
 		device.SetCurrent(val);
@@ -99,6 +164,7 @@ void PSEngine::SetTargetCurrent(float val, bool sync) {
 }
 
 void PSEngine::SetLock(bool enabled, bool sync) {
+  std::lock_guard<std::recursive_mutex> lock(engineMutex);
   if (sync) {
 	device.SetLock(enabled);
   } else {
@@ -107,6 +173,7 @@ void PSEngine::SetLock(bool enabled, bool sync) {
 }
 
 void PSEngine::SetOutput(bool enabled, bool sync) {
+  std::lock_guard<std::recursive_mutex> lock(engineMutex);
   if (sync) {
 	device.SetOut(enabled);
   } else {
@@ -115,11 +182,15 @@ void PSEngine::SetOutput(bool enabled, bool sync) {
 }
 
 void PSEngine::Connect(const std::string &port) {
+  std::lock_guard<std::recursive_mutex> lock(engineMutex);
   targetPortName = port;                    // Сохраняем имя порта
   UpdateSlot(CommandID::CMD_CONNECT, 0.0f); // Payload не важен
 }
 
-void PSEngine::Disconnect() { UpdateSlot(CommandID::CMD_DISCONNECT, 0.0f); }
+void PSEngine::Disconnect() {
+  std::lock_guard<std::recursive_mutex> lock(engineMutex);
+  UpdateSlot(CommandID::CMD_DISCONNECT, 0.0f);
+}
 // === Логика исполнения ===
 
 void PSEngine::Tick() {
@@ -234,12 +305,8 @@ void PSEngine::Tick() {
 
 #ifdef ENABLE_PROFILING
     unsigned duration = static_cast<unsigned>(t_telemetry.check());
-    if (val >= 0) {
-      // Логируем успех с временем
-      pso_logic::trace("Telemetry " + std::string(askVoltage ? "U" : "I") +
-                       " updated in " + std::to_string(duration) + " us");
-    } else {
-      // Логируем ошибку с временем
+    if (val < 0) {
+      // Логируем только ошибки с временем
       ReportError(askVoltage ? CommandID::CMD_GET_VOLTAGE
                              : CommandID::CMD_GET_CURRENT,
                   "Telemetry Timeout/Error", duration);
@@ -333,6 +400,7 @@ uint64_t PSEngine::GetCurrentAgeUs() const {
 }
 
 bool PSEngine::LockConnectSync(const std::string &port) {
+  std::lock_guard<std::recursive_mutex> lock(engineMutex);
   // 1. Пытаемся открыть порт напрямую через device
   bool success = device.Setup(port);
   engine_logic::debug(std::string("Setup returned ") +
@@ -355,6 +423,7 @@ bool PSEngine::LockConnectSync(const std::string &port) {
 }
 
 bool PSEngine::LockDisconnectSync() {
+  std::lock_guard<std::recursive_mutex> lock(engineMutex);
   queue.clear();
   engine_logic::trace(std::string("High Queue size") +
                       std::to_string(highQueue.size()));
@@ -368,7 +437,7 @@ bool PSEngine::LockDisconnectSync() {
       int idx = static_cast<int>(idToExec);
       commandRegistry[idx].isQueued = false;
       commandRegistry[idx].retryCount = 0;
-      Sleep(100);
+	  std::this_thread::sleep_for(std::chrono::milliseconds(100));
       engine_logic::trace("Success");
     } catch (...) {
 

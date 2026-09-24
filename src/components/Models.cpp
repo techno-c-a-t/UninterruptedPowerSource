@@ -2,11 +2,12 @@
 #include <vcl.h>
 #include <IniFiles.hpp>
 #include <memory>
+#include <math.h>
 
 namespace storage {
 // Реализация упаковки/распаковки параметров модели
 void ModelParams::Pack(TCustomIniFile *ini, String section) const {
-    ini->WriteFloat(section, "MinVoltage", minV);
+	ini->WriteFloat(section, "MinVoltage", minV);
 	ini->WriteFloat(section, "MinCurrent", minC);
     ini->WriteFloat(section, "MaxVoltage", maxV);
 	ini->WriteFloat(section, "MaxCurrent", maxC);
@@ -80,12 +81,15 @@ void SetModel (PSEngine& engine, String model, String file) {
 	engine.SetMinCurrent(data.minC);
     engine.SetMaxCurrent(data.maxC);
 	engine.SetMaxVoltage(data.maxV);
-	Form1->ScrollBar1->Min = static_cast<int>(data.minC*100);
-	Form1->ScrollBar1->Max = static_cast<int>(data.maxC*100);
-	Form1->ScrollBar2->Min = static_cast<int>(data.minV*100);
-	Form1->ScrollBar2->Max = static_cast<int>(data.maxV*100);
+	Form1->ScrollBar1->Min = static_cast<int>(round(data.minC*1000));
+	Form1->ScrollBar1->Max = static_cast<int>(round(data.maxC*1000));
+	Form1->ScrollBar2->Min = static_cast<int>(round(data.minV*1000));
+	Form1->ScrollBar2->Max = static_cast<int>(round(data.maxV*1000));
 	Form1->CCurve = data.curveCurrentPow;
     Form1->VCurve = data.curveVoltagePow;
+    Form1->ScrollBar1->Position = Form1->ScrollBar1->Min;
+    Form1->ScrollBar2->Position = Form1->ScrollBar2->Min;
+    // ShowMessage("Updated");
 }
 
 } // namespace storage

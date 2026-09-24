@@ -8,24 +8,45 @@ object Form1: TForm1
   Anchors = [akLeft, akTop, akRight, akBottom]
   BorderWidth = 3
   Caption = 'PowerSource interface'
-  ClientHeight = 838
+  ClientHeight = 865
   ClientWidth = 1394
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
-  Font.Height = -28
+  Font.Height = -24
   Font.Name = 'Segoe UI'
   Font.Style = []
   Position = poDesigned
   Scaled = False
   OnClose = FormClose
   OnCreate = FormCreate
-  TextHeight = 38
+  DesignSize = (
+    1394
+    865)
+  TextHeight = 32
+  object Label5: TLabel
+    Left = 930
+    Top = 672
+    Width = 62
+    Height = 28
+    Margins.Left = 5
+    Margins.Top = 5
+    Margins.Right = 5
+    Margins.Bottom = 5
+    Caption = 'Label5'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -20
+    Font.Name = 'Segoe UI'
+    Font.Style = [fsBold]
+    ParentFont = False
+  end
   object Chart1: TChart
-    Left = 0
-    Top = 600
-    Width = 441
-    Height = 243
+    Left = 8
+    Top = 569
+    Width = 892
+    Height = 288
+    Border.Width = 0
     Legend.Visible = False
     MarginBottom = 0
     MarginLeft = 0
@@ -34,8 +55,11 @@ object Form1: TForm1
     MarginUnits = muPixels
     Title.Font.Color = clBlack
     Title.Text.Strings = (
-      #1053#1072#1087#1088#1103#1078#1077#1085#1080#1077)
+      'TChart')
     Title.VertMargin = 0
+    LeftAxis.Title.Caption = #1042
+    LeftAxis.Title.Position = tpStart
+    LeftAxis.TitleSize = 8
     Shadow.Smooth = False
     Shadow.Visible = False
     View3D = False
@@ -43,9 +67,22 @@ object Form1: TForm1
     TabOrder = 0
     DefaultCanvas = 'TGDIPlusCanvas'
     ColorPaletteIndex = 13
+    object CheckBox1: TCheckBox
+      Left = 500
+      Top = 1290
+      Width = 146
+      Height = 26
+      Margins.Left = 5
+      Margins.Top = 5
+      Margins.Right = 5
+      Margins.Bottom = 5
+      Caption = 'CheckBox1'
+      TabOrder = 0
+    end
     object Series1: TLineSeries
       HoverElement = [heCurrent]
       Brush.BackColor = clDefault
+      LinePen.Width = 3
       Pointer.InflateMargins = True
       Pointer.Style = psRectangle
       XValues.Name = 'X'
@@ -53,32 +90,10 @@ object Form1: TForm1
       YValues.Name = 'Y'
       YValues.Order = loNone
     end
-  end
-  object Chart2: TChart
-    Left = 454
-    Top = 600
-    Width = 446
-    Height = 243
-    Legend.Visible = False
-    MarginBottom = 0
-    MarginLeft = 0
-    MarginRight = 0
-    MarginTop = 0
-    MarginUnits = muPixels
-    Title.Font.Color = clBlack
-    Title.Text.Strings = (
-      #1058#1086#1082)
-    Title.VertMargin = 0
-    Shadow.Smooth = False
-    Shadow.Visible = False
-    View3D = False
-    BevelOuter = bvNone
-    TabOrder = 1
-    DefaultCanvas = 'TGDIPlusCanvas'
-    ColorPaletteIndex = 13
-    object LineSeries1: TLineSeries
+    object Series2: TLineSeries
       HoverElement = [heCurrent]
       Brush.BackColor = clDefault
+      LinePen.Width = 3
       Pointer.InflateMargins = True
       Pointer.Style = psRectangle
       XValues.Name = 'X'
@@ -88,12 +103,18 @@ object Form1: TForm1
     end
   end
   object Button2: TButton
-    Left = 1070
-    Top = 799
-    Width = 152
-    Height = 39
+    Left = 1284
+    Top = 826
+    Width = 100
+    Height = 25
     Caption = 'DropErrors'
-    TabOrder = 2
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -20
+    Font.Name = 'Segoe UI'
+    Font.Style = []
+    ParentFont = False
+    TabOrder = 1
     OnClick = Button2Click
   end
   object StringGrid2: TStringGrid
@@ -111,20 +132,26 @@ object Form1: TForm1
     RowCount = 20
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goDrawFocusSelected, goEditing, goFixedRowDefAlign]
     ScrollBars = ssVertical
-    TabOrder = 3
+    TabOrder = 2
     OnKeyDown = memoryGridKeyDown
   end
   object Button4: TButton
-    Left = 1230
-    Top = 801
-    Width = 152
-    Height = 35
+    Left = 1284
+    Top = 800
+    Width = 100
+    Height = 25
     Margins.Left = 5
     Margins.Top = 5
     Margins.Right = 5
     Margins.Bottom = 5
     Caption = 'DropState'
-    TabOrder = 4
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -20
+    Font.Name = 'Segoe UI'
+    Font.Style = []
+    ParentFont = False
+    TabOrder = 3
     OnClick = Button4Click
   end
   object pnlStattic: TPanel
@@ -137,7 +164,7 @@ object Form1: TForm1
     Margins.Right = 5
     Margins.Bottom = 5
     BevelWidth = 6
-    TabOrder = 5
+    TabOrder = 4
     DesignSize = (
       890
       420)
@@ -687,6 +714,7 @@ object Form1: TForm1
       Font.Style = [fsBold]
       ParentFont = False
       TabOrder = 10
+      OnClick = SaweSeansClick
     end
   end
   object pnlCalkParam: TPanel
@@ -700,7 +728,7 @@ object Form1: TForm1
     Margins.Bottom = 5
     BevelInner = bvLowered
     BevelWidth = 6
-    TabOrder = 6
+    TabOrder = 5
     object Time: TLabel
       Left = 12
       Top = 12
@@ -735,7 +763,7 @@ object Form1: TForm1
     Margins.Right = 5
     Margins.Bottom = 5
     BevelWidth = 6
-    TabOrder = 7
+    TabOrder = 6
     object gbConnection: TGroupBox
       Left = 613
       Top = 6
@@ -868,7 +896,7 @@ object Form1: TForm1
         340
         92)
       object ComboBoxComPorts: TComboBox
-        Left = 8
+        Left = 7
         Top = 38
         Width = 162
         Height = 46
@@ -908,45 +936,123 @@ object Form1: TForm1
       end
     end
   end
-  object Button1: TButton
-    Left = 944
-    Top = 737
-    Width = 113
-    Height = 38
+  object CheckBoxCurrent: TCheckBox
+    Left = 552
+    Top = 560
+    Width = 78
+    Height = 26
     Margins.Left = 5
     Margins.Top = 5
     Margins.Right = 5
     Margins.Bottom = 5
-    Caption = 'Button1'
-    TabOrder = 8
-    OnClick = Button1Click
+    Caption = #1058#1086#1082
+    Checked = True
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clMaroon
+    Font.Height = -20
+    Font.Name = 'Segoe UI'
+    Font.Style = [fsBold, fsItalic]
+    ParentFont = False
+    State = cbChecked
+    TabOrder = 7
+    StyleElements = [seClient, seBorder]
+    OnClick = CheckBoxCurrentClick
   end
-  object discret: TEdit
-    Left = 211
-    Top = 556
-    Width = 137
-    Height = 36
+  object CheckBoxVoltage: TCheckBox
+    Left = 395
+    Top = 560
+    Width = 150
+    Height = 26
     Margins.Left = 5
     Margins.Top = 5
     Margins.Right = 5
     Margins.Bottom = 5
+    Caption = #1053#1072#1087#1088#1103#1078#1077#1085#1080#1077
+    Checked = True
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clNavy
+    Font.Height = -20
+    Font.Name = 'Segoe UI'
+    Font.Style = [fsBold, fsItalic]
+    ParentFont = False
+    State = cbChecked
+    TabOrder = 8
+    StyleElements = [seClient, seBorder]
+    OnClick = CheckBoxVoltageClick
+  end
+  object ButtonResetZoom: TButton
+    Left = 680
+    Top = 560
+    Width = 140
+    Height = 26
+    Margins.Left = 5
+    Margins.Top = 5
+    Margins.Right = 5
+    Margins.Bottom = 5
+    Caption = #1042#1077#1089#1100' '#1075#1088#1072#1092#1080#1082
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
     Font.Height = -20
     Font.Name = 'Segoe UI'
-    Font.Style = []
+    Font.Style = [fsBold, fsItalic]
     ParentFont = False
     TabOrder = 9
-    Text = 'discret(sec)'
+    OnClick = ButtonResetZoomClick
+  end
+  object Panel6: TPanel
+    Left = 80
+    Top = 559
+    Width = 256
+    Height = 26
+    Margins.Left = 5
+    Margins.Top = 5
+    Margins.Right = 5
+    Margins.Bottom = 5
+    Alignment = taRightJustify
+    Anchors = [akLeft]
+    BevelOuter = bvNone
+    Caption = #1089#1077#1082' '#1044#1080#1089#1082#1088#1077#1090#1085#1086#1089#1090#1100
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -20
+    Font.Name = 'Segoe UI'
+    Font.Style = [fsBold, fsItalic]
+    ParentFont = False
+    TabOrder = 10
+    ExplicitTop = 548
+    object discret: TEdit
+      Left = 0
+      Top = -4
+      Width = 65
+      Height = 26
+      Margins.Left = 8
+      Margins.Top = 8
+      Margins.Right = 8
+      Margins.Bottom = 8
+      Alignment = taRightJustify
+      AutoSize = False
+      BorderStyle = bsNone
+      Font.Charset = RUSSIAN_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -24
+      Font.Name = 'Segoe UI'
+      Font.Style = [fsBold, fsItalic]
+      ParentFont = False
+      TabOrder = 0
+      Text = '10'
+      TextHint = '-'
+      OnExit = discretExit
+      OnKeyPress = discretKeyPress
+    end
   end
   object Timer1: TTimer
     Interval = 100
     OnTimer = Timer1Timer
-    Left = 976
-    Top = 680
+    Left = 1160
+    Top = 656
   end
   object sdSaveSeans: TSaveDialog
-    Left = 440
-    Top = 560
+    Left = 256
+    Top = 504
   end
 end

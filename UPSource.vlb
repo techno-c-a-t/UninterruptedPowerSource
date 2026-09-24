@@ -35,9 +35,6 @@ Coordinates=619,474,55,36
 Coordinates=73,144,59,58
 Visible=True
 
-[Chart2]
-Coordinates=10,144,53,58
-
 [currentValue]
 Coordinates=365,280,88,58
 
@@ -64,9 +61,6 @@ Coordinates=531,144,89,58
 
 [Label4]
 Coordinates=266,10,53,58
-
-[LineSeries1]
-Coordinates=511,527,83,36
 
 []
 Coordinates=405,144,53,58

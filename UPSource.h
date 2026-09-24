@@ -26,6 +26,8 @@
 #include <vector>
 #include "src/components/MemTable.h"
 #include "src/utils/time_manager.h"
+#include "src/components/SessionManager.h"
+#include "src/components/ChartManager.h"
 //---------------------------------------------------------------------------
 class TForm1 : public TForm
 {
@@ -39,8 +41,6 @@ __published:	// IDE-managed Components
     TChart *Chart1;
     TLineSeries *Series1;
     TTimer *Timer1;
-    TChart *Chart2;
-    TLineSeries *LineSeries1;
     TPanel *Panel3;
 	TLabel *currentValue;
 	TLabel *Label4;
@@ -51,7 +51,7 @@ __published:	// IDE-managed Components
     TButton *Button2;
     TLabel *Label2;
     TLabel *Label1;
-    TStringGrid *memoryGrid;
+	TStringGrid *memoryGrid;       //таблица предустановленных режимов
     TStringGrid *StringGrid2;
     TButton *Button4;
     TLabel *powerValue;
@@ -76,19 +76,24 @@ __published:	// IDE-managed Components
 	TLabel *energyLabel;
 	TLabel *Wh;
 	TLabel *CycleTimeLabel;
-	TButton *Button1;
 	TEdit *discret;
 	TButton *SaweSeans;
 	TSaveDialog *sdSaveSeans;
+	TCheckBox *CheckBox1;
+	TCheckBox *CheckBoxCurrent;
+	TCheckBox *CheckBoxVoltage;
+	TButton *ButtonResetZoom;
+	TLineSeries *Series2;
+	TLabel *Label5;
+	TPanel *Panel6;
 
     // NOT INTERFACE
 
     void __fastcall PopulateComPorts();
-    void __fastcall requestVAUpdate(bool forceUpdate);
-    void __fastcall ApplyPreset(size_t row);
+	void __fastcall requestVAUpdate(bool forceUpdate);
+	void __fastcall ApplyPreset(size_t row);
     //INTERFACE
-    void __fastcall Button1Click(TObject *Sender);
-    void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
+	void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
     void __fastcall ScrollBar1Change(TObject *Sender);
     void __fastcall ScrollBar2Change(TObject *Sender);
 	void __fastcall Timer1Timer(TObject *Sender);
@@ -108,16 +113,25 @@ __published:	// IDE-managed Components
 		  int X, int Y);
     void __fastcall SaveMemGridClick(TObject *Sender);
 	void __fastcall ComboBox1Change(TObject *Sender);
+	void __fastcall SaweSeansClick(TObject *Sender);
+	void __fastcall discretKeyPress(TObject *Sender, System::WideChar &Key);
+	void __fastcall discretExit(TObject *Sender);
+	void __fastcall updateSessionCharts();
+	void __fastcall CheckBoxVoltageClick(TObject *Sender);
+	void __fastcall CheckBoxCurrentClick(TObject *Sender);
+	void __fastcall ButtonResetZoomClick(TObject *Sender);
+
+public:
+	SessionManager sessionManager;
+	ChartManager chartManager;
 
 
 
 
 private:	// User declarations
-//	unsigned int elapsedSeconds; // Счётчик секунд цикла
-//	bool cycleRunning;           // Флаг работы цикла
-//
-//	void __fastcall UpdateCycleTimerLabel();
 
+	 float lastValidDiscret = 1.0f; // Переменная типа float для хранения
+									// валидного значения дискретности обновления графика
 
 
 public:		// User declarations

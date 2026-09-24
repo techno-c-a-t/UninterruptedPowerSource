@@ -10,7 +10,6 @@
 
 #include <cstring>   // Для strlen
 #include <stdexcept> // Для исключений
-#include <random>
 #include <ctime>
 #include <deque>
 #include <Registry.hpp>        // Для работы с реестром
@@ -27,7 +26,7 @@
 #include "DataProcessing.cpp"
 #include "src/components/EnergyLabel.h"
 #include "src/components/Models.h"
-
+#include <cmath>  // Нужно для std::fmod (замена Delphi'евскому frac)
 
 
 #define MAX_VOLTAGE 300.0f
@@ -136,11 +135,13 @@ void __fastcall handleOutConnection () {
 	Form1->CycleTimeLabelTimer.start();
     Energy.CleanValue();
 	Capacity.CleanValue();
+	Form1->sessionManager.StartSession();
 
 }
 
 void __fastcall handleOutDisconnection () {
 	Form1->CycleTimeLabelTimer.stop();
+	Form1->sessionManager.StopSession();
 
 }
 //-----------------------------------------------
@@ -332,42 +333,14 @@ __fastcall TForm1::TForm1(TComponent *Owner)
     : TForm(Owner)
 {
 }
-//---------------------------------------------------------------------------
-/**
- * @brief Обрабатывает нажатие на кнопку Button1 для отправки данных через COM-порт.
- */
-void __fastcall TForm1::Button1Click(TObject *Sender)
-{
-	 ShowMessage(CycleTimeLabelTimer.check());
-	 if(CycleTimeLabelTimer.check()) {
-		 Form1->CycleTimeLabelTimer.stop();
-	 } else {
-		 Form1->CycleTimeLabelTimer.start();
-     }
 
-
-
-
-	/*AnsiString msg = AnsiString(Edit1->Text);
-    if(strlen(msg.c_str())!=13)
-    {
-    if (MessageDlg("Длина строки, которую необходимо отправить, \n не равна 13. Все равно отправить?", mtConfirmation, TMsgDlgButtons() << mbYes << mbNo,0) != mrYes)
-    {return;}
-    }
-    handleOutMessage(msg);
-    TCP.Write(msg.c_str(),13);
-    char* readBuffer = new char[13];
-    TCP.Read(readBuffer, 13);
-    handleIncomeMessage(readBuffer);
-    //ShowMessage(UnicodeString(readBuffer));
-    //TCP.Read( */
-}
 //---------------------------------------------------------------------------
 /**
  * @brief Закрывает COM-порт при закрытии формы.
  */
 void __fastcall TForm1::FormClose(TObject *Sender, TCloseAction &Action)
 {
+    engine.StopLoop();
     storage::SavePresetsToDisk("AutomaticallySavedData.ini", CVMemoryArray);
     engine.LockDisconnectSync();
 }
@@ -383,15 +356,15 @@ void __fastcall TForm1::ScrollBar1Change(TObject *Sender)
 	float min = ScrollBar1->Min, max = ScrollBar1->Max, pos = ScrollBar1->Position;
 	float norm_value = (pos - min)/(max - min);
 	float value = pow(norm_value, CCurve);
-	float final_value = (min + value * (max - min)) / 100;
+	float final_value = (min + value * (max - min)) / 1000;
 	Edit8->Text = formatValue_c(final_value, 4, 3);
-	if (final_value < 100)
+	if (final_value < 1000)
     {
-        ScrollBar1->SmallChange = 1;
+		ScrollBar1->SmallChange = 10;
 	}
     else
     {
-        ScrollBar1->SmallChange = 10;
+        ScrollBar1->SmallChange = 100;
     }
 }
 //---------------------------------------------------------------------------
@@ -404,15 +377,15 @@ void __fastcall TForm1::ScrollBar2Change(TObject *Sender)
 	float min = ScrollBar2->Min, max = ScrollBar2->Max, pos = ScrollBar2->Position;
 	float norm_value = (pos - min)/(max - min);
 	float value = pow(norm_value, VCurve);
-	float final_value = (min + value * (max - min)) / 100;
+	float final_value = (min + value * (max - min)) / 1000;
 	Edit9->Text = formatValue_c(final_value, 4, 2);
-	if (final_value < 100)
+	if (final_value < 1000)
 	{
-		ScrollBar2->SmallChange = 1;
+		ScrollBar2->SmallChange = 10;
 	}
 	else
 	{
-		ScrollBar2->SmallChange = 10;
+		ScrollBar2->SmallChange = 100;
 	}
 }
 //---------------------------------------------------------------------------
@@ -421,47 +394,32 @@ void __fastcall TForm1::ScrollBar2Change(TObject *Sender)
  * @brief Обновляет положение ScrollBar2 в соответствии со значением в Edit9.
  */
 
-/**
- * @brief По таймеру добавляет случайную точку на график и управляет размером очереди данных.
- */
+
+//---------------------------------------------------------------------------
+
+
+
+
 void __fastcall TForm1::Timer1Timer(TObject *Sender)
 {
-	/*addPointToVoltageGraphic(rand()*1.0/1000);
-    if(voltageData.size()>200)
-    {
-        voltageData.pop_front();
-		voltageData.pop_front();
-    }
-//    */
-//    if (timerStarted)
-//
-//    {
-//        timerStarted = 0;
-//        return;
-//    } // иначе попытка чтения сразу после комманды открыть вход
-    if (engine.IsVoltageStab() && engine.GetOutState())
-    {
-//        Label13->Visible = False;
-//        Label14->Visible = True;
+	if (engine.IsVoltageStab() && engine.GetOutState())
+	{
+		Label4->Font->Color = clBlack;
+		Label3->Font->Color = clRed;
+	}
 
-        Label4->Font->Color = clBlack;
-        Label3->Font->Color = clRed;
-    }
-    else if (engine.GetOutState())
-    {
-//        Label14->Visible = False;
-//        Label13->Visible = True;
+	else if (engine.GetOutState())
+	{
+		Label4->Font->Color = clRed;
+		Label3->Font->Color = clBlack;
+	}
 
-        Label4->Font->Color = clRed;
-        Label3->Font->Color = clBlack;
-    }  else {
-//       Label14->Visible = False;
-//        Label13->Visible = False;
+	  else {
+		Label4->Font->Color = clBlack;
+		Label3->Font->Color = clBlack;
+	}
 
-        Label4->Font->Color = clBlack;
-        Label3->Font->Color = clBlack;
-    }
-    if (engine.GetOutState() != (ToggleSwitch2->State == tssOn)) {
+	if (engine.GetOutState() != (ToggleSwitch2->State == tssOn)) {
 		if (engine.GetOutState()) {
 			 setOutSwitchOn();
 			 handleOutConnection();
@@ -471,27 +429,32 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
 			handleOutDisconnection();
 
 		}
-    }
-    if (engine.Connected()) {
-       requestVAUpdate();
-    }
-    engine.Tick();
-    float cached_v = engine.GetLastVoltage();
-    float cached_c = engine.GetLastCurrent();
-    voltageValue->Caption = formatValue_c(cached_v, 4, 2);
-    currentValue->Caption = formatValue_c(cached_c, 4, 3);
+	}
+
+	if (engine.Connected()) { // Если связь с устройством установлена (engine.Connected())
+	   requestVAUpdate();	  //каждый тик таймера считываются текущие значения тока и напряжения для вывода на экран.
+	}
+    //---------------------------------------------------------------------------
+
+
+	float cached_v = engine.GetLastVoltage();
+	float cached_c = engine.GetLastCurrent();
+	voltageValue->Caption = formatValue_c(cached_v, 4, 2);
+	currentValue->Caption = formatValue_c(cached_c, 4, 3);
     float power =  cached_v * cached_c;
 	powerValue->Caption = formatValue_c(power, 4, 2);
 	Energy.Update(cached_v, cached_c);
 	Capacity.Update(cached_v, cached_c);
 
+	updateSessionCharts();  // перерисовка графиков
+
 
 
 	//---------------------------------------------------------------------------
-	auto now_vector = TimeNowVector();
-    now_vector.pop_back();
+	auto now_vector = TimeNowVector(); // взяли массив текущ времени
+	now_vector.pop_back();  //    убрали милисек
 	Time->Caption = TimeNowString(now_vector).c_str();  //вывод текущего времени
-	UpdateCycleTimeLabel();
+	UpdateCycleTimeLabel();   //   обновление времени сеанса
 }
 //---------------------------------------------------------------------------
 
@@ -500,10 +463,9 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
  */
 void __fastcall TForm1::FormCreate(TObject *Sender)
 {
-	srand(time(NULL));
-    ButtonRefreshPortsClick(this);
-    ScrollBar1->Position = /*ScrollBar1->Max*/ 0;
-	ScrollBar2->Position = /*ScrollBar2->Max*/ 0;
+	ButtonRefreshPortsClick(this);   // иммитация нажатия кнопки "обновить"
+//	ScrollBar1->Position = /*ScrollBar1->Max*/ 0;
+//	ScrollBar2->Position = /*ScrollBar2->Max*/ 0;
 
 //	Energy.label = Form1->EnergyLabel;
 //    TStringGridCellInfo tmpInf = GetGridDetails(StringGrid1);
@@ -528,21 +490,33 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
     memoryGrid->ColWidths[2] = 80;  // Для ампер
       CVMemoryArray.resize(10);
 
-    String fileName = "ManuallySavedData.ini";
+	String fileName = "ManuallySavedData.ini";   // создание переменной для фала  с именем
+
+	//  заполнение таблицы из файла
 
     if (FileExists(fileName)) {
        storage::LoadPresetsFromDisk("ManuallySavedData.ini", CVMemoryArray); // Загрузили файл в память
-    } else {
-        storage::LoadPresetsFromDisk("AutomaticallySavedData.ini", CVMemoryArray); // Загрузили файл в память
+	} else {
+		storage::LoadPresetsFromDisk("AutomaticallySavedData.ini", CVMemoryArray); // Загрузили файл в память
     }
-
-
-	VectorToGrid(CVMemoryArray, memoryGrid, 0, 10);         // Отобразили на экране
+	VectorToGrid(CVMemoryArray, memoryGrid, 0, 10);         // массив Отобразили на экране
 
 	Energy.label = Form1->energyLabel;
 	Capacity.label = Form1->batteryCapacity;
+
+
 	storage::LoadModels(ComboBox1, "Models.ini");
 	storage::SetModel(engine, ComboBox1->Text, "Models.ini");
+    ComboBox1Change(this);
+
+   //	discret->Text = "1,0";
+	discretExit(this);     //похоже добавка после обновления обработки ввода данных
+
+	chartManager.Init(Chart1);  // инициализация графика
+
+	engine.SetSessionCore(&sessionManager);  //инициализация массива для логфайла
+
+	engine.StartLoop();      //запуск основного цикла
 
 
 //--------------------------------------------------------------------------
@@ -574,18 +548,15 @@ void __fastcall TForm1::ToggleSwitch1Click(TObject *Sender)
          setOutSwitchOff();
          requestVAUpdate(true);
          engine.SetOutput(false);
-         Sleep(100); // ??Поможет?? Не помогло
     } else {
-         setConnectionSwitchOn();
-         engine.SetOutput(false);
          setOutSwitchOff();
-         bool success =  engine.LockDisconnectSync();
+         bool success = engine.LockDisconnectSync();
          if (!success) {
             ShowMessage("Cant disconnect. Probably, connection was lost. This may cause undefined behaviour");
          }
          setConnectionSwitchOff();
-         }
     }
+}
 
 //---------------------------------------------------------------------------
 void __fastcall TForm1::ToggleSwitch2Click(TObject *Sender)
@@ -605,7 +576,7 @@ engine_logic::trace("Now out switch is " + std::string(now_enabled? "on" : "off"
 					 std::string("Output has been set in state ") +
 					 std::string(now_enabled ? "on" : "off")
 					 );
- now_enabled? setOutSwitchOff() : setOutSwitchOn();  // АПДЕЙТ В ТАЙМЕРЕ !!!
+ now_enabled ? setOutSwitchOff() : setOutSwitchOn();
 }
 
 //---------------------------------------------------------------------------
@@ -663,8 +634,8 @@ void __fastcall TForm1::Edit9Exit(TObject *Sender)
 		try {
 				float min = ScrollBar2->Min, max = ScrollBar2->Max;
 				float final_value = StrToFloat(tmp_data);
-				// 1. Убираем деление на 100
-				float value_scaled = final_value * 100;
+				// 1. Убираем деление на 1000
+				float value_scaled = final_value * 1000;
 
 				// 2. Обратное линейное преобразование (находим value после pow)
 				float value_after_pow = (value_scaled - min) / (max - min);
@@ -699,13 +670,13 @@ void __fastcall TForm1::Edit8Exit(TObject *Sender)
 //			   Text = formatValue_c(ScrollBar1->Position / 100.0f, 4, 2);
 				float min = ScrollBar1->Min, max = ScrollBar1->Max;
 				float final_value = StrToFloat(tmp_data);
-				// 1. Убираем деление на 100
-				float value_scaled = final_value * 100;
+				// 1. Убираем деление на 1000
+				float value_scaled = final_value * 1000;
 
 				// 2. Обратное линейное преобразование (находим value после pow)
 				float value_after_pow = (value_scaled - min) / (max - min);
 
-				// 3. Обратная степень (извлекаем корень степени VCurve)
+				// 3. Обратная степень (извлекаем корень степени лVCurve)
 				float norm_value = pow(value_after_pow, 1.0f / VCurve);
 
 				// 4. Находим исходный pos
@@ -725,6 +696,7 @@ void __fastcall TForm1::Edit8KeyDown(TObject *Sender, WORD &Key, TShiftState Shi
         Edit8Exit(this);
 }
 //---------------------------------------------------------------------------
+
 void __fastcall TForm1::memoryGridKeyDown(TObject *Sender, WORD &Key,
                                            TShiftState Shift)
 {
@@ -812,10 +784,7 @@ void __fastcall TForm1::UpdateCycleTimeLabel()
 	if (CycleTimeLabelTimer.check()) {
 		LastCycleDurationValue = CycleTimeLabelTimer.TimeToVector();
 		LastCycleDurationValue.pop_back();
-		Button1->Caption = "yes";
-	}   else {
-         Button1->Caption = "No";
-    }
+	}
     CycleTimeLabel->Caption = TimeNowString(LastCycleDurationValue).c_str();
 	return ;
 
@@ -831,10 +800,207 @@ void __fastcall TForm1::ComboBox1Change(TObject *Sender)
 	{
 		storage::SetModel(engine, ComboBox1->Text, "Models.ini");
 
-    }
+	}
+
 }
 
 //---------------------------------------------------------------------------
 
+void __fastcall TForm1::updateSessionCharts()
+{
+	if (!CycleTimeLabelTimer.check()) {
+        return;
+	}
+	const std::vector<SessionPoint> raw_data = sessionManager.GetData();
+	std::vector<SessionPoint> chart_data{};
+	const unsigned frequency = static_cast<unsigned>(StrToFloatDef(discret->Text, 0.0f) * 10.0f);
+	if(raw_data.size() < frequency || frequency == 0) {
+		return;
+	}
+	chart_data.reserve(raw_data.size() / frequency);
+	auto chart_interator = raw_data.begin();
+	chart_data.push_back(*chart_interator);
+	std::advance(chart_interator, frequency - 1);
+	chart_data.push_back(*chart_interator);
+	for(int i = 1; i < raw_data.size() / frequency; i++) {
+		std::advance(chart_interator, frequency);
+		chart_data.push_back(*chart_interator);
+	}
+    chartManager.Update(chart_data);
+}
+
+void __fastcall TForm1::CheckBoxVoltageClick(TObject *Sender)
+{
+    TCheckBox *cb = dynamic_cast<TCheckBox*>(Sender);
+    if (cb) {
+		chartManager.SetVoltageVisible(cb->Checked);
+		updateSessionCharts();
+	}
+}
+
+void __fastcall TForm1::CheckBoxCurrentClick(TObject *Sender)
+{
+	TCheckBox *cb = dynamic_cast<TCheckBox*>(Sender);
+	if (cb) {
+		chartManager.SetCurrentVisible(cb->Checked);
+		updateSessionCharts();
+	}
+}
+
+void __fastcall TForm1::ButtonResetZoomClick(TObject *Sender)
+{
+	chartManager.ResetZoom();
+	updateSessionCharts();
+}
+
+//---------------------------------------------------------------------------
+//  Валидатор для поля discret (TEdit) в C++ Builder. Используется концепция
+// White-list (симуляция итогового состояния) вместо прямого фильтрования символов.
+//  Допустимые диапазоны:
+//Дробный: 0,1 ... 0,9 (строго 1 знак после запятой).
+//Целочисленный: 1 ... 3600 (без лидирующих нулей вроде 010).
+//  Промежуточные состояния:
+//Строки "0" и "0," разрешены исключительно в процессе набора с клавиатуры.
+//
+// ============================================================================
+// 1. ВВОД С КЛАВИАТУРЫ (KeyPress) — Симуляция и White-list
+// discretKeyPress: Формирует futureText (с учетом выделения SelLength и
+// курсора SelStart). Если результат не проходит по «белому списку» — нажатие
+// блокируется (Key = 0).
+// ============================================================================
+void __fastcall TForm1::discretKeyPress(TObject *Sender, System::WideChar &Key)
+{
+    // 1. Блокировка ввода при включенном ToggleSwitch2
+    if (ToggleSwitch2->State == TToggleSwitchState::tssOn) {
+        Key = 0;
+        return;
+    }
+
+    // 2. Системные клавиши (Backspace, Enter) пропускаем
+    if (Key == VK_BACK || Key == VK_RETURN) return;
+
+    // Автоматическая замена точки на запятую
+    if (Key == '.') Key = ',';
+
+    // Разрешаем только цифры и запятую
+    if ((Key < '0' || Key > '9') && Key != ',') {
+        Key = 0;
+        return;
+    }
+
+    // 3. СИМУЛЯЦИЯ: Строим futureText (строка, которая получится ПОСЛЕ нажатия)
+    String currentText = discret->Text;
+    int selStart = discret->SelStart;   // 0-based индекс курсора
+    int selLength = discret->SelLength; // Длина выделения
+
+    String futureText = currentText;
+    if (selLength > 0) {
+        futureText.Delete(selStart + 1, selLength); // В UnicodeString индексы с 1
+    }
+    futureText.Insert(String(Key), selStart + 1);
+    futureText = futureText.Trim();
+
+    // 4. БЕЛЫЙ СПИСОК (Проверяем только допустимые шаблоны)
+
+    // А) Промежуточные состояния
+    if (futureText == "0" || futureText == "0,") {
+        return; // Разрешено
+    }
+
+    // Б) Дробный диапазон: строго "0,1" ... "0,9"
+    if (futureText.Length() == 3 && futureText.SubString(1, 2) == "0,") {
+        System::WideChar decDigit = futureText[3];
+        if (decDigit >= '1' && decDigit <= '9') {
+            return; // Разрешено
+        }
+    }
+
+    // В) Запрет лидирующих нулей ("010", "05")
+    if (futureText.SubString(1, 1) == "0" && futureText.Length() > 1) {
+        Key = 0; // Блокируем
+        return;
+    }
+
+    // Г) Целочисленный диапазон: [1 ... 3600]
+    int intVal = StrToIntDef(futureText, -1);
+    if (intVal >= 1 && intVal <= 3600) {
+        return; // Разрешено
+    }
+
+    // Всё остальное блокируем
+    Key = 0;
+}
+
+// ============================================================================
+// 2. ВЫХОД ИЗ ПОЛЯ (Exit) — Автокоррекция и Форматирование
+// discretExit: Обрабатывает вставку через буфер (Ctrl+V), незавершенный
+//ввод ("0,") и выполняет автокоррекцию/откат к lastValidDiscret.
+// ============================================================================
+void __fastcall TForm1::discretExit(TObject *Sender)
+{
+    String text = discret->Text.Trim();
+
+    TFormatSettings fs = TFormatSettings::Create();
+    fs.DecimalSeparator = ',';
+
+    // Заменяем точку на запятую (если вставили из буфера)
+    text = StringReplace(text, ".", ",", TReplaceFlags() << rfReplaceAll);
+
+    float val = StrToFloatDef(text, -1.0f, fs);
+
+    // Проверяем, является ли число целым через C++ std::fmod
+    bool isInteger = (std::fmod(val, 1.0f) == 0.0f);
+
+    bool isValidFloat = (val >= 0.1f && val < 1.0f);
+    bool isValidInt   = (val >= 1.0f && val <= 3600.0f) && isInteger;
+
+    // Если значение некорректно (пусто, "0,", вне диапазонов)
+    if (!isValidFloat && !isValidInt) {
+        // Восстанавливаем из float-переменной lastValidDiscret
+        if (lastValidDiscret < 1.0f) {
+            discret->Text = FormatFloat("0.0", lastValidDiscret, fs);
+        } else {
+            discret->Text = IntToStr((int)lastValidDiscret);
+        }
+        return;
+    }
+
+    // Приведение к каноническому виду
+    if (val < 1.0f) {
+        discret->Text = FormatFloat("0.0", val, fs); // "0,1" ... "0,9"
+    } else {
+        discret->Text = IntToStr((int)val);          // "1" ... "3600"
+    }
+
+    // Запоминаем новое успешное float-значение
+    lastValidDiscret = val;
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::SaweSeansClick(TObject *Sender)
+{
+	if (sessionManager.GetPointCount() == 0) {
+		ShowMessage("Нет записанных данных сеанса для сохранения.");
+		return;
+	}
+
+	sdSaveSeans->Filter = "Лог файлы (*.log)|*.log|Текстовые файлы (*.txt)|*.txt|Все файлы (*.*)|*.*";
+	sdSaveSeans->DefaultExt = "log";
+	sdSaveSeans->Title = "Сохранение лога сеанса";
+
+	if (sdSaveSeans->Execute()) {
+		float totalEnergyWh = Energy.value / 3600.0f;
+		float totalCapacityAh = Capacity.value / 3600.0f;
+
+		bool success = sessionManager.SaveToFile(sdSaveSeans->FileName, totalEnergyWh, totalCapacityAh);
+		if (success) {
+			ShowMessage("Лог сеанса успешно сохранён!");
+		} else {
+            ShowMessage("Ошибка при сохранении лог-файла.");
+        }
+    }
+}
+
+//----------------------------------------------------------------------
 
 
