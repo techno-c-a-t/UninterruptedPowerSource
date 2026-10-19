@@ -1,4 +1,5 @@
-﻿#include "MemTable.h"
+#include "MemTable.h"
+#include "src/config.h"
 #include <vector>
 
 extern std::vector<storage::CVMemPair> CVMemoryArray;
@@ -53,8 +54,8 @@ void VectorToGrid(const std::vector<storage::CVMemPair>& data, TStringGrid* grid
 
         // Строка в гриде = индекс в векторе + 1 (пропускаем заголовок)
         int row = i + 1;
-        grid->Cells[COL_VOLTAGE][row] = TForm1::formatValue_c(data[i].voltage, 4, 2);
-        grid->Cells[COL_CURRENT][row] = TForm1::formatValue_c(data[i].current, 4, 2);
+        grid->Cells[COL_VOLTAGE][row] = TForm1::formatValue_c(data[i].voltage, config::ui::DIGITS_VOLTAGE_TOTAL, config::ui::DIGITS_VOLTAGE_DECIMALS);
+        grid->Cells[COL_CURRENT][row] = TForm1::formatValue_c(data[i].current, config::ui::DIGITS_CURRENT_TOTAL, config::ui::DIGITS_CURRENT_DECIMALS);
 
         // Можно еще добавить номер в колонку 0
         grid->Cells[0][row] = IntToStr(i + 1);

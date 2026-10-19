@@ -1,4 +1,4 @@
-﻿//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
 #ifndef UPSourceH
 #define UPSourceH
@@ -26,6 +26,8 @@
 #include <vector>
 #include "src/components/MemTable.h"
 #include "src/utils/time_manager.h"
+#include "src/components/SessionManager.h"
+#include "src/components/ChartManager.h"
 //---------------------------------------------------------------------------
 class TForm1 : public TForm
 {
@@ -51,7 +53,7 @@ __published:	// IDE-managed Components
     TButton *Button2;
     TLabel *Label2;
     TLabel *Label1;
-    TStringGrid *memoryGrid;
+	TStringGrid *memoryGrid;       //таблица предустановленных режимов
     TStringGrid *StringGrid2;
     TButton *Button4;
     TLabel *powerValue;
@@ -108,6 +110,17 @@ __published:	// IDE-managed Components
 		  int X, int Y);
     void __fastcall SaveMemGridClick(TObject *Sender);
 	void __fastcall ComboBox1Change(TObject *Sender);
+	void __fastcall SaweSeansClick(TObject *Sender);
+	void __fastcall discretKeyPress(TObject *Sender, System::WideChar &Key);
+	void __fastcall discretExit(TObject *Sender);
+	void __fastcall updateSessionCharts();
+	void __fastcall CheckBoxVoltageClick(TObject *Sender);
+	void __fastcall CheckBoxCurrentClick(TObject *Sender);
+	void __fastcall ButtonResetZoomClick(TObject *Sender);
+
+public:
+	SessionManager sessionManager;
+	ChartManager chartManager;
 
 
 

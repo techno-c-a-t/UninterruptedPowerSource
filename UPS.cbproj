@@ -1,4 +1,4 @@
-﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{D31EF486-AD36-4013-96F5-8CA596090279}</ProjectGuid>
         <ProjectVersion>20.1</ProjectVersion>
@@ -195,6 +195,12 @@
         <CppCompile Include="src\components\SaveOpen.cpp">
             <BuildOrder>8</BuildOrder>
         </CppCompile>
+        <CppCompile Include="src\components\SessionManager.cpp">
+            <BuildOrder>12</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="src\components\ChartManager.cpp">
+            <BuildOrder>14</BuildOrder>
+        </CppCompile>
         <CppCompile Include="src\core\engine.cpp">
             <BuildOrder>11</BuildOrder>
         </CppCompile>
@@ -205,7 +211,10 @@
             <BuildOrder>7</BuildOrder>
         </CppCompile>
         <CppCompile Include="src\utils\log_core.cpp">
-            <BuildOrder>7</BuildOrder>
+            <BuildOrder>9</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="src\utils\SessionCore.cpp">
+            <BuildOrder>13</BuildOrder>
         </CppCompile>
         <CppCompile Include="UPS.cpp">
             <BuildOrder>0</BuildOrder>

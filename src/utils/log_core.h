@@ -3,8 +3,10 @@
 #include <cstddef>
 #ifndef LOG_CORE
 #define LOG_CORE
+#include "src/config.h"
+
 namespace logger_internal {
-    const size_t CACHE_MAX_SIZE = 10; 
+    const size_t CACHE_MAX_SIZE = config::logging::CACHE_FLUSH_SIZE; 
 }
 
 #if defined(__BORLANDC__) || defined(__CODEGEARC__)

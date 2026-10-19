@@ -14,7 +14,11 @@ SRCS := main_handtest.cpp \
         src/hw/ComPortUtils.cpp \
         src/PS/PowerSourceObject.cpp \
         src/core/engine.cpp \
-        src/utils/log_core.cpp
+        src/utils/log_core.cpp \
+        src/utils/SessionCore.cpp \
+        src/utils/SessionExport.cpp \
+        src/components/SessionManager.cpp \
+        src/components/ChartManager.cpp
 
 # 4. Превращаем список .cpp в список .o (объектных файлов)
 # $(patsubst %.cpp, %.o, ...) заменяет расширение у всех файлов в списке SRCS

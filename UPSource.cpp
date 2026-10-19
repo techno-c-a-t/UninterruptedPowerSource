@@ -1,4 +1,4 @@
-﻿
+
 //---------------------------------------------------------------------------
 #include <vcl.h>
 
@@ -27,11 +27,10 @@
 #include "DataProcessing.cpp"
 #include "src/components/EnergyLabel.h"
 #include "src/components/Models.h"
+#include "src/config.h"
 
-
-
-#define MAX_VOLTAGE 300.0f
-#define MAX_CURRENT 1.0f
+#define MAX_VOLTAGE config::ui::DEFAULT_MAX_VOLTAGE
+#define MAX_CURRENT config::ui::DEFAULT_MAX_CURRENT
 // #include <System.SysUtils.hpp> // TBytes и AnsiString обычно определены здесь
 
 /**
@@ -136,11 +135,13 @@ void __fastcall handleOutConnection () {
 	Form1->CycleTimeLabelTimer.start();
     Energy.CleanValue();
 	Capacity.CleanValue();
+	Form1->sessionManager.StartSession();
 
 }
 
 void __fastcall handleOutDisconnection () {
 	Form1->CycleTimeLabelTimer.stop();
+	Form1->sessionManager.StopSession();
 
 }
 //-----------------------------------------------
@@ -187,7 +188,7 @@ void __fastcall TForm1::requestVAUpdate(bool forceUpdate = false)
             v_val = -1; // Значение по умолчанию
         }
     }
-    if (((abs(previousVoltage - v_val) > 0.0001) || forceUpdate) && (v_val >= 0))
+    if (((abs(previousVoltage - v_val) > config::ui::INPUT_HYSTERESIS_DELTA) || forceUpdate) && (v_val >= 0))
     {
         /*command tmpComm;
         tmpComm.index = 1;
@@ -196,7 +197,7 @@ void __fastcall TForm1::requestVAUpdate(bool forceUpdate = false)
         previousVoltage = v_val;
         // ShowMessage("Push voltage");
     }
-    if (((abs(previousCurrent - c_val) > 0.0001) || forceUpdate) && (c_val >= 0))
+    if (((abs(previousCurrent - c_val) > config::ui::INPUT_HYSTERESIS_DELTA) || forceUpdate) && (c_val >= 0))
     {
         engine.SetTargetCurrent(c_val);
         previousCurrent = c_val;
@@ -368,7 +369,8 @@ void __fastcall TForm1::Button1Click(TObject *Sender)
  */
 void __fastcall TForm1::FormClose(TObject *Sender, TCloseAction &Action)
 {
-    storage::SavePresetsToDisk("AutomaticallySavedData.ini", CVMemoryArray);
+    engine.StopLoop();
+    storage::SavePresetsToDisk(config::ui::FILE_AUTO_PRESETS, CVMemoryArray);
     engine.LockDisconnectSync();
 }
 //---------------------------------------------------------------------------
@@ -383,15 +385,15 @@ void __fastcall TForm1::ScrollBar1Change(TObject *Sender)
 	float min = ScrollBar1->Min, max = ScrollBar1->Max, pos = ScrollBar1->Position;
 	float norm_value = (pos - min)/(max - min);
 	float value = pow(norm_value, CCurve);
-	float final_value = (min + value * (max - min)) / 100;
-	Edit8->Text = formatValue_c(final_value, 4, 3);
-	if (final_value < 100)
+	float final_value = (min + value * (max - min)) / config::ui::SCROLLBAR_SCALE;
+	Edit8->Text = formatValue_c(final_value, config::ui::DIGITS_CURRENT_TOTAL, config::ui::DIGITS_CURRENT_DECIMALS);
+	if (final_value < config::ui::SCROLLBAR_THRESHOLD)
     {
-        ScrollBar1->SmallChange = 1;
+		ScrollBar1->SmallChange = config::ui::SCROLLBAR_SMALL_STEP_LOW;
 	}
     else
     {
-        ScrollBar1->SmallChange = 10;
+        ScrollBar1->SmallChange = config::ui::SCROLLBAR_SMALL_STEP_HIGH;
     }
 }
 //---------------------------------------------------------------------------
@@ -404,15 +406,15 @@ void __fastcall TForm1::ScrollBar2Change(TObject *Sender)
 	float min = ScrollBar2->Min, max = ScrollBar2->Max, pos = ScrollBar2->Position;
 	float norm_value = (pos - min)/(max - min);
 	float value = pow(norm_value, VCurve);
-	float final_value = (min + value * (max - min)) / 100;
-	Edit9->Text = formatValue_c(final_value, 4, 2);
-	if (final_value < 100)
+	float final_value = (min + value * (max - min)) / config::ui::SCROLLBAR_SCALE;
+	Edit9->Text = formatValue_c(final_value, config::ui::DIGITS_VOLTAGE_TOTAL, config::ui::DIGITS_VOLTAGE_DECIMALS);
+	if (final_value < config::ui::SCROLLBAR_THRESHOLD)
 	{
-		ScrollBar2->SmallChange = 1;
+		ScrollBar2->SmallChange = config::ui::SCROLLBAR_SMALL_STEP_LOW;
 	}
 	else
 	{
-		ScrollBar2->SmallChange = 10;
+		ScrollBar2->SmallChange = config::ui::SCROLLBAR_SMALL_STEP_HIGH;
 	}
 }
 //---------------------------------------------------------------------------
@@ -475,15 +477,16 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
     if (engine.Connected()) {
        requestVAUpdate();
     }
-    engine.Tick();
     float cached_v = engine.GetLastVoltage();
     float cached_c = engine.GetLastCurrent();
-    voltageValue->Caption = formatValue_c(cached_v, 4, 2);
-    currentValue->Caption = formatValue_c(cached_c, 4, 3);
+    voltageValue->Caption = formatValue_c(cached_v, config::ui::DIGITS_VOLTAGE_TOTAL, config::ui::DIGITS_VOLTAGE_DECIMALS);
+    currentValue->Caption = formatValue_c(cached_c, config::ui::DIGITS_CURRENT_TOTAL, config::ui::DIGITS_CURRENT_DECIMALS);
     float power =  cached_v * cached_c;
-	powerValue->Caption = formatValue_c(power, 4, 2);
+	powerValue->Caption = formatValue_c(power, config::ui::DIGITS_POWER_TOTAL, config::ui::DIGITS_POWER_DECIMALS);
 	Energy.Update(cached_v, cached_c);
 	Capacity.Update(cached_v, cached_c);
+
+	updateSessionCharts();
 
 
 
@@ -500,9 +503,9 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
  */
 void __fastcall TForm1::FormCreate(TObject *Sender)
 {
-	srand(time(NULL));
-    ButtonRefreshPortsClick(this);
-    ScrollBar1->Position = /*ScrollBar1->Max*/ 0;
+	srand(time(NULL));      //Инициализирует генератор случайных чисел
+	ButtonRefreshPortsClick(this);
+	ScrollBar1->Position = /*ScrollBar1->Max*/ 0;
 	ScrollBar2->Position = /*ScrollBar2->Max*/ 0;
 
 //	Energy.label = Form1->EnergyLabel;
@@ -523,26 +526,34 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
 	memoryGrid->Cells[2][0] = "A";
 
     // Можно задать ширину колонок кодом, чтобы было красиво
-    memoryGrid->ColWidths[0] = 40;  // Узкая для номера
-    memoryGrid->ColWidths[1] = 80;  // Для вольт
-    memoryGrid->ColWidths[2] = 80;  // Для ампер
-      CVMemoryArray.resize(10);
+    memoryGrid->ColWidths[0] = config::presets::COL_WIDTH_NUMBER;
+    memoryGrid->ColWidths[1] = config::presets::COL_WIDTH_VOLTAGE;
+    memoryGrid->ColWidths[2] = config::presets::COL_WIDTH_CURRENT;
+    CVMemoryArray.resize(config::presets::PRESET_COUNT);
 
-    String fileName = "ManuallySavedData.ini";
+    String fileName = config::ui::FILE_MANUAL_PRESETS;
 
     if (FileExists(fileName)) {
-       storage::LoadPresetsFromDisk("ManuallySavedData.ini", CVMemoryArray); // Загрузили файл в память
+       storage::LoadPresetsFromDisk(config::ui::FILE_MANUAL_PRESETS, CVMemoryArray); // Загрузили файл в память
     } else {
-        storage::LoadPresetsFromDisk("AutomaticallySavedData.ini", CVMemoryArray); // Загрузили файл в память
+        storage::LoadPresetsFromDisk(config::ui::FILE_AUTO_PRESETS, CVMemoryArray); // Загрузили файл в память
     }
 
 
-	VectorToGrid(CVMemoryArray, memoryGrid, 0, 10);         // Отобразили на экране
+	VectorToGrid(CVMemoryArray, memoryGrid, 0, config::presets::PRESET_COUNT);         // Отобразили на экране
 
 	Energy.label = Form1->energyLabel;
 	Capacity.label = Form1->batteryCapacity;
-	storage::LoadModels(ComboBox1, "Models.ini");
-	storage::SetModel(engine, ComboBox1->Text, "Models.ini");
+	storage::LoadModels(ComboBox1, config::ui::FILE_MODELS);
+	storage::SetModel(engine, ComboBox1->Text, config::ui::FILE_MODELS);
+    ComboBox1Change(this);
+
+	discret->Text = "1,0";
+	discretExit(this);
+
+	chartManager.Init(Chart1);
+	engine.SetSessionCore(&sessionManager);
+	engine.StartLoop();
 
 
 //--------------------------------------------------------------------------
@@ -574,18 +585,15 @@ void __fastcall TForm1::ToggleSwitch1Click(TObject *Sender)
          setOutSwitchOff();
          requestVAUpdate(true);
          engine.SetOutput(false);
-         Sleep(100); // ??Поможет?? Не помогло
     } else {
-         setConnectionSwitchOn();
-         engine.SetOutput(false);
          setOutSwitchOff();
-         bool success =  engine.LockDisconnectSync();
+         bool success = engine.LockDisconnectSync();
          if (!success) {
             ShowMessage("Cant disconnect. Probably, connection was lost. This may cause undefined behaviour");
          }
          setConnectionSwitchOff();
-         }
     }
+}
 
 //---------------------------------------------------------------------------
 void __fastcall TForm1::ToggleSwitch2Click(TObject *Sender)
@@ -663,8 +671,8 @@ void __fastcall TForm1::Edit9Exit(TObject *Sender)
 		try {
 				float min = ScrollBar2->Min, max = ScrollBar2->Max;
 				float final_value = StrToFloat(tmp_data);
-				// 1. Убираем деление на 100
-				float value_scaled = final_value * 100;
+				// 1. Убираем деление на 1000
+				float value_scaled = final_value * 1000;
 
 				// 2. Обратное линейное преобразование (находим value после pow)
 				float value_after_pow = (value_scaled - min) / (max - min);
@@ -699,8 +707,8 @@ void __fastcall TForm1::Edit8Exit(TObject *Sender)
 //			   Text = formatValue_c(ScrollBar1->Position / 100.0f, 4, 2);
 				float min = ScrollBar1->Min, max = ScrollBar1->Max;
 				float final_value = StrToFloat(tmp_data);
-				// 1. Убираем деление на 100
-				float value_scaled = final_value * 100;
+				// 1. Убираем деление на 1000
+				float value_scaled = final_value * 1000;
 
 				// 2. Обратное линейное преобразование (находим value после pow)
 				float value_after_pow = (value_scaled - min) / (max - min);
@@ -800,7 +808,7 @@ void __fastcall TForm1::Button4Click(TObject *Sender)
 
 void __fastcall TForm1::SaveMemGridClick(TObject *Sender)
 {
-storage::SavePresetsToDisk("ManuallySavedData.ini", CVMemoryArray);
+storage::SavePresetsToDisk(config::ui::FILE_MANUAL_PRESETS, CVMemoryArray);
 }
 //---------------------------------------------------------------------------
 
@@ -831,10 +839,127 @@ void __fastcall TForm1::ComboBox1Change(TObject *Sender)
 	{
 		storage::SetModel(engine, ComboBox1->Text, "Models.ini");
 
+	}
+
+}
+
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::updateSessionCharts()
+{
+    chartManager.Update(sessionManager.GetData());
+}
+
+void __fastcall TForm1::CheckBoxVoltageClick(TObject *Sender)
+{
+    TCheckBox *cb = dynamic_cast<TCheckBox*>(Sender);
+    if (cb) {
+        chartManager.SetVoltageVisible(cb->Checked);
+        updateSessionCharts();
+    }
+}
+
+void __fastcall TForm1::CheckBoxCurrentClick(TObject *Sender)
+{
+    TCheckBox *cb = dynamic_cast<TCheckBox*>(Sender);
+    if (cb) {
+        chartManager.SetCurrentVisible(cb->Checked);
+        updateSessionCharts();
+    }
+}
+
+void __fastcall TForm1::ButtonResetZoomClick(TObject *Sender)
+{
+    chartManager.ResetZoom();
+    updateSessionCharts();
+}
+
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::discretKeyPress(TObject *Sender, System::WideChar &Key)
+{
+    // Разрешаем Backspace (\b или char code 8)
+    if (Key == 8) {
+        return;
+    }
+
+    // Если цифра 0-9, разрешаем
+    if (Key >= '0' && Key <= '9') {
+        return;
+    }
+
+    // Если точка или запятая
+    if (Key == '.' || Key == ',') {
+        String currentText = discret->Text;
+        // Разрешаем только если точек и запятых еще нет в тексте
+        if (currentText.Pos(".") == 0 && currentText.Pos(",") == 0) {
+            return;
+        }
+    }
+
+    // Запрещаем ввод любого другого символа (буквы, минус, второй разделитель)
+    Key = 0;
+}
+
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::discretExit(TObject *Sender)
+{
+    String text = discret->Text.Trim();
+    if (text.IsEmpty()) {
+        discret->Text = "1,0";
+        sessionManager.SetDiscretInterval(1.0f);
+        return;
+    }
+
+    // Нормализуем точку в запятую для StrToFloat
+    String formattedText = StringReplace(text, ".", ",", TReplaceFlags() << rfReplaceAll);
+
+    try {
+        float val = StrToFloat(formattedText);
+        if (val <= 0.0f) {
+            val = 1.0f;
+            formattedText = "1,0";
+        }
+        discret->Text = formattedText;
+        sessionManager.SetDiscretInterval(val);
+    } catch (...) {
+        discret->Text = "1,0";
+        sessionManager.SetDiscretInterval(1.0f);
     }
 }
 
 //---------------------------------------------------------------------------
+
+void __fastcall TForm1::SaweSeansClick(TObject *Sender)
+{
+    if (sessionManager.GetPointCount() == 0) {
+        ShowMessage("Нет записанных данных сеанса для сохранения.");
+        return;
+    }
+
+    sdSaveSeans->Filter = "JSON файлы (*.json)|*.json|Все файлы (*.*)|*.*";
+    sdSaveSeans->DefaultExt = "json";
+    sdSaveSeans->Title = "Сохранение сеанса в JSON";
+
+    if (sdSaveSeans->Execute()) {
+        float totalEnergyWh = Energy.value / 3600.0f;
+        float totalCapacityAh = Capacity.value / 3600.0f;
+
+        bool success = sessionManager.SaveToFile(sdSaveSeans->FileName, totalEnergyWh, totalCapacityAh);
+        if (success) {
+            ShowMessage("Сеанс успешно сохранён в JSON!");
+        } else {
+            ShowMessage("Ошибка при сохранении файла сеанса.");
+        }
+    }
+}
+
+//---------------------------------------------------------------------------
+
+
+
+
 
 
 

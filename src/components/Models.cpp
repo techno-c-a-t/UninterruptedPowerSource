@@ -1,12 +1,14 @@
-﻿#include "Models.h"
+#include "Models.h"
+#include "src/config.h"
 #include <vcl.h>
 #include <IniFiles.hpp>
 #include <memory>
+#include <math.h>
 
 namespace storage {
 // Реализация упаковки/распаковки параметров модели
 void ModelParams::Pack(TCustomIniFile *ini, String section) const {
-    ini->WriteFloat(section, "MinVoltage", minV);
+	ini->WriteFloat(section, "MinVoltage", minV);
 	ini->WriteFloat(section, "MinCurrent", minC);
     ini->WriteFloat(section, "MaxVoltage", maxV);
 	ini->WriteFloat(section, "MaxCurrent", maxC);
@@ -15,12 +17,12 @@ void ModelParams::Pack(TCustomIniFile *ini, String section) const {
 }
 
 void ModelParams::Depack(TCustomIniFile *ini, String section) {
-    minV = ini->ReadFloat(section, "MinVoltage", 0.0f);
-    minC = ini->ReadFloat(section, "MinCurrent", 0.0f);
-    maxV = ini->ReadFloat(section, "MaxVoltage", 5.0f); // дефолт 5В
-	maxC = ini->ReadFloat(section, "MaxCurrent", 0.1f);  // дефолт 0.1А
-	curveCurrentPow = ini->ReadFloat(section, "CurveCurrentPow", 1.0f);
-	curveVoltagePow = ini->ReadFloat(section, "CurveVoltagePow", 1.0f);
+    minV = ini->ReadFloat(section, "MinVoltage", config::models::DEFAULT_MIN_VOLTAGE);
+    minC = ini->ReadFloat(section, "MinCurrent", config::models::DEFAULT_MIN_CURRENT);
+    maxV = ini->ReadFloat(section, "MaxVoltage", config::models::DEFAULT_MAX_VOLTAGE);
+	maxC = ini->ReadFloat(section, "MaxCurrent", config::models::DEFAULT_MAX_CURRENT);
+	curveCurrentPow = ini->ReadFloat(section, "CurveCurrentPow", config::models::DEFAULT_CURVE_CURRENT_POW);
+	curveVoltagePow = ini->ReadFloat(section, "CurveVoltagePow", config::models::DEFAULT_CURVE_VOLTAGE_POW);
 }
 
 // Заполнение ComboBox именами секций
@@ -80,12 +82,15 @@ void SetModel (PSEngine& engine, String model, String file) {
 	engine.SetMinCurrent(data.minC);
     engine.SetMaxCurrent(data.maxC);
 	engine.SetMaxVoltage(data.maxV);
-	Form1->ScrollBar1->Min = static_cast<int>(data.minC*100);
-	Form1->ScrollBar1->Max = static_cast<int>(data.maxC*100);
-	Form1->ScrollBar2->Min = static_cast<int>(data.minV*100);
-	Form1->ScrollBar2->Max = static_cast<int>(data.maxV*100);
+	Form1->ScrollBar1->Min = static_cast<int>(round(data.minC*1000));
+	Form1->ScrollBar1->Max = static_cast<int>(round(data.maxC*1000));
+	Form1->ScrollBar2->Min = static_cast<int>(round(data.minV*1000));
+	Form1->ScrollBar2->Max = static_cast<int>(round(data.maxV*1000));
 	Form1->CCurve = data.curveCurrentPow;
     Form1->VCurve = data.curveVoltagePow;
+    Form1->ScrollBar1->Position = Form1->ScrollBar1->Min;
+    Form1->ScrollBar2->Position = Form1->ScrollBar2->Min;
+    // ShowMessage("Updated");
 }
 
 } // namespace storage

@@ -1,16 +1,20 @@
-﻿#ifndef ENGINE_H
+#ifndef ENGINE_H
 #define ENGINE_H
 
 #include "engine_log.h"
 #include "src/PS/PowerSourceObject.h"
 #include "src/utils/common_namespace.h"
 #include "src/utils/time_manager.h"
+#include "src/utils/SessionCore.h"
+#include "src/config.h"
 #include <array>
 #include <chrono>
 #include <deque>
 #include <string>
 #include <vector>
-
+#include <thread>
+#include <mutex>
+#include <atomic>
 
 // Включает замер времени выполнения каждой команды
 #define ENABLE_PROFILING 1
@@ -19,6 +23,13 @@
 
 class PSEngine {
 private:
+  std::thread workerThread;
+  std::atomic<bool> isRunning{false};
+  mutable std::recursive_mutex engineMutex;
+  SessionCore *activeSessionCore = nullptr;
+
+  void WorkerLoop();
+
   enum class EngineMode {
     FAST,   // 1 попытка. Ошибка -> удаляем команду.
     STABLE, // 3 попытки для критических, 1 для обычных.
@@ -73,7 +84,7 @@ private:
     bool full = false;
 
   public:
-    explicit ErrorLogBuffer(size_t size = 50) : buffer(size) {}
+    explicit ErrorLogBuffer(size_t size = config::engine::ERROR_BUFFER_SIZE) : buffer(size) {}
 
     void push(CommandID cmd, const std::string &msg, size_t tick,
               unsigned duration, uint64_t timestamp);
@@ -164,6 +175,13 @@ public:
   bool LockConnectSync(
       const std::string &port); // Тоже синхронно, чтобы мгновенно обновить UI
   bool LockDisconnectSync();    // Тоже синхронно, чтобы мгновенно обновить UI
+
+  // === УПРАВЛЕНИЕ ФОНОВЫМ ПОТОКОМ И СЕССИЕЙ ===
+  void StartLoop();
+  void StopLoop();
+  bool IsLoopRunning() const { return isRunning.load(); }
+  void SetSessionCore(SessionCore *session);
+  unsigned int GetCalculatedStepMs() const;
 
   // === ГЛАВНЫЙ ЦИКЛ ===
   void Tick();

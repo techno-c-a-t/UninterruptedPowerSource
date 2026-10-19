@@ -1,4 +1,4 @@
-﻿#include <algorithm>    // std::transform
+#include <algorithm>    // std::transform
 #include <string>       // Для std::to_string
 #include <stdexcept>    // Для std::runtime_error и базового std::exception
 #include <system_error> // Для std::system_error, std::error_code и std::errc
@@ -8,6 +8,7 @@
 #pragma hdrstop
 #include "ComPortUtils.h" // Если используете отдельный .h
 #include "ComPortUtilsLogging.h"
+#include "src/config.h"
 // Вспомогательная функция для отображения последней ошибки WinAPI
 void win_api_port::ShowLastComError(const std::string &prefixMessage)
 {
@@ -121,11 +122,11 @@ HANDLE win_api_port::OpenComPort(const ComPortSettings &settings)
         return INVALID_HANDLE_VALUE;
     }
 
-    timeouts.ReadIntervalTimeout = 15;
-    timeouts.ReadTotalTimeoutMultiplier = 2;
-    timeouts.ReadTotalTimeoutConstant = 70; // Увеличим немного для консоли
-    timeouts.WriteTotalTimeoutMultiplier = 2;
-    timeouts.WriteTotalTimeoutConstant = 100;
+    timeouts.ReadIntervalTimeout = config::com_port::TIMEOUT_READ_INTERVAL;
+    timeouts.ReadTotalTimeoutMultiplier = config::com_port::TIMEOUT_READ_MULTIPLIER;
+    timeouts.ReadTotalTimeoutConstant = config::com_port::TIMEOUT_READ_CONSTANT;
+    timeouts.WriteTotalTimeoutMultiplier = config::com_port::TIMEOUT_WRITE_MULTIPLIER;
+    timeouts.WriteTotalTimeoutConstant = config::com_port::TIMEOUT_WRITE_CONSTANT;
 
     if (!SetCommTimeouts(hCom, &timeouts))
     {

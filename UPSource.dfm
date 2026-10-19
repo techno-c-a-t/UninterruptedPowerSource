@@ -8,7 +8,7 @@ object Form1: TForm1
   Anchors = [akLeft, akTop, akRight, akBottom]
   BorderWidth = 3
   Caption = 'PowerSource interface'
-  ClientHeight = 838
+  ClientHeight = 857
   ClientWidth = 1394
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -687,6 +687,7 @@ object Form1: TForm1
       Font.Style = [fsBold]
       ParentFont = False
       TabOrder = 10
+      OnClick = SaweSeansClick
     end
   end
   object pnlCalkParam: TPanel
@@ -868,7 +869,7 @@ object Form1: TForm1
         340
         92)
       object ComboBoxComPorts: TComboBox
-        Left = 8
+        Left = 7
         Top = 38
         Width = 162
         Height = 46
@@ -922,7 +923,7 @@ object Form1: TForm1
     OnClick = Button1Click
   end
   object discret: TEdit
-    Left = 211
+    Left = 219
     Top = 556
     Width = 137
     Height = 36
@@ -937,7 +938,9 @@ object Form1: TForm1
     Font.Style = []
     ParentFont = False
     TabOrder = 9
-    Text = 'discret(sec)'
+    Text = '1,0'
+    OnExit = discretExit
+    OnKeyPress = discretKeyPress
   end
   object Timer1: TTimer
     Interval = 100
@@ -946,7 +949,7 @@ object Form1: TForm1
     Top = 680
   end
   object sdSaveSeans: TSaveDialog
-    Left = 440
-    Top = 560
+    Left = 1032
+    Top = 672
   end
 end

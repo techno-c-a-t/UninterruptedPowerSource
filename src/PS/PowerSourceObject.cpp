@@ -1,8 +1,9 @@
-﻿#include <cmath>
+#include <cmath>
 #include <iomanip>
 #include <string>
 #pragma hdrstop
 #include "PowerSourceObject.h"
+#include "src/config.h"
 
 // Пытается открыть порт, если не уже
 bool PowerSource::Connect(std::string comPort) noexcept
@@ -32,8 +33,14 @@ bool PowerSource::Setup(std::string comPort) noexcept
 
 bool PowerSource::Teardown() noexcept
 {
-    SetLock(false);
-    Sleep(100);
+    SetOut(false);
+    Sleep(config::power_source::SLEEP_BEFORE_UNLOCK_MS);
+    bool unlocked = SetLock(false);
+    if (!unlocked) {
+        Sleep(config::power_source::SLEEP_AFTER_UNLOCK_RETRY_MS);
+        SetLock(false); // retry
+    }
+    Sleep(config::power_source::SLEEP_BEFORE_DISCONNECT_MS);
 	connection_state = static_cast<State>(!Disconnect());
 	return static_cast<bool>(connection_state == State::DISABLED);
 }
@@ -118,8 +125,8 @@ bool PowerSource::SetVoltage(float voltage) noexcept
         pso_logic::error("Attempt to set voltage less than 0 in PS::SetVoltage");
         return false;
     }
-    if (voltage > 999.998f) {
-        pso_logic::error("Attempt to set voltage more than 999.998 in PS::SetVoltage");
+    if (voltage > config::power_source::MAX_PROTOCOL_VOLTAGE) {
+        pso_logic::error("Attempt to set voltage more than " + std::to_string(config::power_source::MAX_PROTOCOL_VOLTAGE) + " in PS::SetVoltage");
         return false;
     }
     int int_voltage = static_cast<int>(voltage * 1000);
@@ -199,8 +206,8 @@ bool PowerSource::SetCurrent(float current) noexcept
         pso_logic::error("Attempt to set current less than 0 in PS::SetCurrent");
         return false;
     }
-    if (current > 999.998f) {
-        pso_logic::error("Attempt to set current more than 999.998 in PS::SetCurrent");
+    if (current > config::power_source::MAX_PROTOCOL_CURRENT) {
+        pso_logic::error("Attempt to set current more than " + std::to_string(config::power_source::MAX_PROTOCOL_CURRENT) + " in PS::SetCurrent");
         return false;
     }
     int int_current = static_cast<int>(current * 1000);
@@ -245,31 +252,26 @@ bool PowerSource::SetCurrent(float current) noexcept
 
 bool PowerSource::SetOut(bool setOn) noexcept
 {
-    // if (setOn == static_cast<bool>(out_state))
-    // {
-    //     return true;
-    // }
-    // Если это включить, перестанет работать форс - отключение для синхронизации физического и логического состояния
-    if (setOn)
+    std::string cmd = setOn ? "<07000000000>" : "<08000000000>";
+    if (!Port.Write(cmd))
     {
-        bool success = Port.Write(std::string("<07000000000>"));
-        if (success == false)
-        {
-            return false;
-        }
-        out_state = State::ENABLED;
+        return false;
     }
-    else
+    std::string response = Port.Read(14);
+    if (response.length() < 5)
     {
-        bool success = Port.Write(std::string("<08000000000>"));
-        if (success == false)
-        {
-            return false;
-        }
-        out_state = State::DISABLED;
+        pso_logic::error("MSU returned incorrect value after setting out in PS::SetOut");
+        return false;
     }
-    return true;
-};
+    char expectedCmdChar = setOn ? '7' : '8';
+    if (response[2] == expectedCmdChar && response[3] == 'O' && response[4] == 'K')
+    {
+        out_state = setOn ? State::ENABLED : State::DISABLED;
+        return true;
+    }
+    pso_logic::error("MSU returned incorrect response character in PS::SetOut");
+    return false;
+}
 bool PowerSource::SetLock(bool setOn) noexcept
 {
     // if (setOn == static_cast<bool>(lock_state))
