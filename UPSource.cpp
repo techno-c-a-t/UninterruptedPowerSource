@@ -192,10 +192,10 @@ void __fastcall TForm1::requestVAUpdate(bool forceUpdate = false)
     {
         /*command tmpComm;
         tmpComm.index = 1;
-        tmpComm.value =*/
-        engine.SetTargetVoltage(v_val);
+		tmpComm.value =*/
+		engine.SetTargetVoltage(v_val);
         previousVoltage = v_val;
-        // ShowMessage("Push voltage");
+		// ShowMessage("Push voltage");
     }
     if (((abs(previousCurrent - c_val) > 0.0001) || forceUpdate) && (c_val >= 0))
     {
@@ -285,6 +285,7 @@ void __fastcall TForm1::PopulateComPorts()
 // INTERFACE
 //---------------------------------------------------------------------------
 TButton *MemoryButtons[10] = {};
+
 TForm1::TStringGridCellInfo GetGridDetails(TStringGrid *AStringGrid)
 {
     TForm1::TStringGridCellInfo info;
@@ -340,7 +341,7 @@ __fastcall TForm1::TForm1(TComponent *Owner)
  */
 void __fastcall TForm1::FormClose(TObject *Sender, TCloseAction &Action)
 {
-    engine.StopLoop();
+	engine.StopLoop();
     storage::SavePresetsToDisk("AutomaticallySavedData.ini", CVMemoryArray);
     engine.LockDisconnectSync();
 }
@@ -454,78 +455,103 @@ void __fastcall TForm1::Timer1Timer(TObject *Sender)
 	auto now_vector = TimeNowVector(); // взяли массив текущ времени
 	now_vector.pop_back();  //    убрали милисек
 	Time->Caption = TimeNowString(now_vector).c_str();  //вывод текущего времени
+    // Вывод текущей даты в формате DD.MM.GG (две цифры года)
+	Date->Caption = FormatDateTime("dd.mm.yy", TDateTime::CurrentDate());
 	UpdateCycleTimeLabel();   //   обновление времени сеанса
 }
 //---------------------------------------------------------------------------
 
-/**
+/*
  * @brief Инициализирует генератор случайных чисел и обновляет список COM-портов при создании формы.
  */
 void __fastcall TForm1::FormCreate(TObject *Sender)
 {
-	ButtonRefreshPortsClick(this);   // иммитация нажатия кнопки "обновить"
-//	ScrollBar1->Position = /*ScrollBar1->Max*/ 0;
-//	ScrollBar2->Position = /*ScrollBar2->Max*/ 0;
+	// ------------------------------------------------------------------------
+	// 1. ИНИЦИАЛИЗАЦИЯ И НАСТРОЙКА UI-КОМПОНЕНТОВ
+	// ------------------------------------------------------------------------
 
-//	Energy.label = Form1->EnergyLabel;
-//    TStringGridCellInfo tmpInf = GetGridDetails(StringGrid1);
-//    TButton *tmpButtonData = nullptr;
-//    for (int i = 0; i < 0; i++)
-//    {
-//        tmpButtonData = new TButton(this);
-//        MemoryButtons[i] = tmpButtonData;
-//        tmpButtonData->Top = tmpInf.TopLeftX + i * tmpInf.CellHeight;
-//        tmpButtonData->Top = tmpInf.TopLeftY;
-//    }
-
-
-    // 3. Прописываем заголовки (Row 0)
-    memoryGrid->Cells[0][0] = "№";
+	// Заголовки и ширина колонок таблицы предустановок
+	memoryGrid->Cells[0][0] = "№";
 	memoryGrid->Cells[1][0] = "V";
 	memoryGrid->Cells[2][0] = "A";
 
-    // Можно задать ширину колонок кодом, чтобы было красиво
-    memoryGrid->ColWidths[0] = 40;  // Узкая для номера
-    memoryGrid->ColWidths[1] = 80;  // Для вольт
-    memoryGrid->ColWidths[2] = 80;  // Для ампер
-      CVMemoryArray.resize(10);
+	memoryGrid->ColWidths[0] = 40;  // Номер
+	memoryGrid->ColWidths[1] = 80;  // Вольты
+	memoryGrid->ColWidths[2] = 80;  // Амперы
 
-	String fileName = "ManuallySavedData.ini";   // создание переменной для фала  с именем
+	// Привязка UI-меток к структурам/классам расчета (без использования Form1->)
+	Energy.label   = energyLabel;
+	Capacity.label = batteryCapacity;
 
-	//  заполнение таблицы из файла
+	// 1) Исключаем элемент seFont из стилей Windows, чтобы разблокировать Font->Color
+   //	CheckBoxVoltage->StyleElements = CheckBoxVoltage->StyleElements >> seFont;
+  //	CheckBoxCurrent->StyleElements = CheckBoxCurrent->StyleElements >> seFont;
 
-    if (FileExists(fileName)) {
-       storage::LoadPresetsFromDisk("ManuallySavedData.ini", CVMemoryArray); // Загрузили файл в память
-	} else {
-		storage::LoadPresetsFromDisk("AutomaticallySavedData.ini", CVMemoryArray); // Загрузили файл в память
-    }
-	VectorToGrid(CVMemoryArray, memoryGrid, 0, 10);         // массив Отобразили на экране
+	// 2) Цвет текста CheckBox (Примечание: при включенных Runtime Themes
+	// системный стиль Windows переопределяет Font->Color для TCheckBox) НЕ СРАБОТАЛО!!!
+  //	CheckBoxVoltage->Font->Color = clNavy;
+  //	CheckBoxCurrent->Font->Color = clMaroon;
 
-	Energy.label = Form1->energyLabel;
-	Capacity.label = Form1->batteryCapacity;
+	// ------------------------------------------------------------------------
+	// 2. ИНИЦИАЛИЗАЦИЯ МЕНЕДЖЕРОВ И СТРУКТУР ДАННЫХ
+	// ------------------------------------------------------------------------
+
+	// Заготавливает память для таблицы предустановок
+	CVMemoryArray.resize(10);
+
+// Выбор и загрузка пресетов памяти
+	const String primaryFile   = "ManuallySavedData.ini";
+    const String fallbackFile  = "AutomaticallySavedData.ini";
+	const String activeFile    = FileExists(primaryFile) ? primaryFile : fallbackFile;
+
+	storage::LoadPresetsFromDisk(activeFile, CVMemoryArray);
+	VectorToGrid(CVMemoryArray, memoryGrid, 0, 10);
+
+ // Инициализация графиков и менеджера сессий
+	chartManager.Init(Chart1);
+	engine.SetSessionCore(&sessionManager); //инициализация массива для логфайла
+
+	// ------------------------------------------------------------------------
+	// 3. ЗАГРУЗКА И ПРИМЕНЕНИЕ НАСТРОЕК
+	// ------------------------------------------------------------------------
+
+	// Загрузка доступных моделей устройств в комбобокс
+	storage::LoadModels(ComboBoxDevice, "Models.ini");
+	// передаем в движок параметры выбранного устройства
+	storage::SetModel(engine, ComboBoxDevice->Text, "Models.ini");
+
+	// Заполняем выпадающий список ComboBoxComPorts доступными в системе COM-портами
+	 PopulateComPorts();
 
 
-	storage::LoadModels(ComboBox1, "Models.ini");
-	storage::SetModel(engine, ComboBox1->Text, "Models.ini");
-    ComboBox1Change(this);
+
+
+
+	ComboBoxDeviceChange(this);
 
    //	discret->Text = "1,0";
 	discretExit(this);     //похоже добавка после обновления обработки ввода данных
 
-	chartManager.Init(Chart1);  // инициализация графика
-
-	engine.SetSessionCore(&sessionManager);  //инициализация массива для логфайла
-
-	engine.StartLoop();      //запуск основного цикла
 
 
-//--------------------------------------------------------------------------
-	// При создании формы  сброс времени цикла и флага цикла
 
-//	cycleRunning = false;
-//	ResetCycleTime();
+
+
 
 }
+void __fastcall TForm1::FormShow(TObject *Sender)
+{
+	// Запускаем основной цикл/опрос только тогда, когда окно полностью показано на экране
+	static bool isFirstShow = true;
+	if (isFirstShow) {
+		engine.StartLoop();
+		isFirstShow = false;
+	}
+}
+
+
+
+
 //---------------------------------------------------------------------------
 
 /**
@@ -577,42 +603,21 @@ engine_logic::trace("Now out switch is " + std::string(now_enabled? "on" : "off"
 					 std::string(now_enabled ? "on" : "off")
 					 );
  now_enabled ? setOutSwitchOff() : setOutSwitchOn();
+
+ 	// Блокируем или разрешаем зум и скролл графика
+    if (now_enabled) {
+        Chart1->AllowPanning = (TPanningMode)0; // pmNone (полный запрет сдвига)
+        Chart1->Zoom->Active = false;          // Отключаем зум
+    } else {
+        Chart1->AllowPanning = (TPanningMode)1; // pmHorizontal (разрешен сдвиг по X)
+        Chart1->Zoom->Active = true;           // Включаем зум обратно
+    }
 }
 
 //---------------------------------------------------------------------------
-/**
- * @brief Обновляет метку LabelSelectedPort при выборе нового COM-порта в ComboBoxComPorts.
- */
-//void __fastcall TForm1::ComboBoxComPortsChange(TObject *Sender)
-//{
-//    if (ComboBoxComPorts->ItemIndex != -1 && ComboBoxComPorts->Items->Count > 0 && ComboBoxComPorts->Enabled)
-//    {
-//        LabelSelectedPort->Caption = "Выбран порт: " + ComboBoxComPorts->Text;
-//    }
-//    else
-//    {
-//        LabelSelectedPort->Caption = "Порт не выбран";
-//    }
-//}
 
-/*---------------------------------------------------------------------------
-void __fastcall TForm1::ButtonConnectClick(TObject *Sender)
-{
-    if (ComboBoxComPorts->ItemIndex != -1 && ComboBoxComPorts->Enabled)
-    {
-        String selectedPort = ComboBoxComPorts->Text;
-        if (selectedPort == "COM-порты не найдены") {
-             ShowMessage("Нет доступных COM-портов для подключения.");
-             return;
+//---------------------------------------------------------------------------
 
-        ShowMessage("Попытка подключения к: " + selectedPort);
-    }
-    else
-    {
-        ShowMessage("Пожалуйста, выберите COM-порт.");
-    }
-}
-*/
 
 //---------------------------------------------------------------------------
 
@@ -793,12 +798,12 @@ void __fastcall TForm1::UpdateCycleTimeLabel()
 
 
 
-void __fastcall TForm1::ComboBox1Change(TObject *Sender)
+void __fastcall TForm1::ComboBoxDeviceChange(TObject *Sender)
 {
     // Проверяем, что в комбобоксе что-то выбрано
-    if (ComboBox1->ItemIndex != -1)
+	if (ComboBoxDevice->ItemIndex != -1)
 	{
-		storage::SetModel(engine, ComboBox1->Text, "Models.ini");
+		storage::SetModel(engine, ComboBoxDevice->Text, "Models.ini");
 
 	}
 
@@ -828,11 +833,13 @@ void __fastcall TForm1::updateSessionCharts()
 	}
     chartManager.Update(chart_data);
 }
+//---------------------------------------------------------------------------
 
+ //---------------------------------------------------------------------------
 void __fastcall TForm1::CheckBoxVoltageClick(TObject *Sender)
 {
-    TCheckBox *cb = dynamic_cast<TCheckBox*>(Sender);
-    if (cb) {
+	TCheckBox *cb = dynamic_cast<TCheckBox*>(Sender);
+	if (cb) {
 		chartManager.SetVoltageVisible(cb->Checked);
 		updateSessionCharts();
 	}
@@ -1003,4 +1010,31 @@ void __fastcall TForm1::SaweSeansClick(TObject *Sender)
 
 //----------------------------------------------------------------------
 
+
+//---------------------------------------------------------------------------
+void __fastcall TForm1::Chart1Scroll(TObject *Sender)
+{
+	// Если переключатель в состоянии tssOn, прерываем обработку
+    if (ToggleSwitch2->State == tssOn) {
+        return;
+	}
+
+	// 1. Проверяем, ушел ли левый край оси X левее 0
+	if (Chart1->BottomAxis->Minimum < 0)
+	{
+		// Вычисляем текущую видимую ширину графика (разницу между правым и левым краем)
+		double currentRange = Chart1->BottomAxis->Maximum - Chart1->BottomAxis->Minimum;
+
+		// Фиксируем левый край на 0, а правый сдвигаем так, чтобы ширина окна просмотра не сжалась
+		Chart1->BottomAxis->SetMinMax(0.0, currentRange);
+	}
+}
+//---------------------------------------------------------------------------
+void __fastcall TForm1::Chart1MouseWheelDown(TObject *Sender, TShiftState Shift, TPoint &MousePos,
+		  bool &Handled)
+{
+// Вызываем нашу функцию проверки границы
+	Chart1Scroll(Sender);
+}
+//---------------------------------------------------------------------------
 

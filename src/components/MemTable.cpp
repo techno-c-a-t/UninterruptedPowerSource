@@ -54,7 +54,7 @@ void VectorToGrid(const std::vector<storage::CVMemPair>& data, TStringGrid* grid
         // Строка в гриде = индекс в векторе + 1 (пропускаем заголовок)
         int row = i + 1;
         grid->Cells[COL_VOLTAGE][row] = TForm1::formatValue_c(data[i].voltage, 4, 2);
-        grid->Cells[COL_CURRENT][row] = TForm1::formatValue_c(data[i].current, 4, 2);
+		grid->Cells[COL_CURRENT][row] = TForm1::formatValue_c(data[i].current, 4, 3);
 
         // Можно еще добавить номер в колонку 0
         grid->Cells[0][row] = IntToStr(i + 1);
@@ -123,8 +123,8 @@ void __fastcall TForm1::ApplyPreset(const size_t index) {
     if (index > CVMemoryArray.size()) {
         return;
     }
-    Edit8->Text = formatValue_c(CVMemoryArray[index].current, 4, 2);
-    Edit9->Text = formatValue_c(CVMemoryArray[index].voltage, 4, 2);
+	Edit8->Text = formatValue_c(CVMemoryArray[index].current, 4, 2);
+    Edit9->Text = formatValue_c(CVMemoryArray[index].voltage, 4, 3);
     Edit8Exit(this);
     Edit9Exit(this);
 }

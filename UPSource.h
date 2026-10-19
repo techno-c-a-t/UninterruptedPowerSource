@@ -68,9 +68,9 @@ __published:	// IDE-managed Components
 	TGroupBox *gbConnection;
 	TToggleSwitch *ToggleSwitch1;
 	TGroupBox *gbDeviceSelect;
-	TComboBox *ComboBox1;
 	TGroupBox *gbCommPortSelect;
 	TComboBox *ComboBoxComPorts;
+    TComboBox *ComboBoxDevice;
 	TButton *ButtonRefreshPorts;
 	TPanel *Panel5;
 	TLabel *energyLabel;
@@ -79,13 +79,14 @@ __published:	// IDE-managed Components
 	TEdit *discret;
 	TButton *SaweSeans;
 	TSaveDialog *sdSaveSeans;
-	TCheckBox *CheckBox1;
 	TCheckBox *CheckBoxCurrent;
 	TCheckBox *CheckBoxVoltage;
 	TButton *ButtonResetZoom;
 	TLineSeries *Series2;
-	TLabel *Label5;
 	TPanel *Panel6;
+	TLabel *Label5;
+	TLabel *Label6;
+	TLabel *Date;
 
     // NOT INTERFACE
 
@@ -98,7 +99,8 @@ __published:	// IDE-managed Components
     void __fastcall ScrollBar2Change(TObject *Sender);
 	void __fastcall Timer1Timer(TObject *Sender);
 	void __fastcall FormCreate(TObject *Sender);
-    void __fastcall ToggleSwitch1Click(TObject *Sender);
+	void __fastcall FormShow(TObject *Sender);      // <-- Добавил
+	void __fastcall ToggleSwitch1Click(TObject *Sender);
 	void __fastcall ToggleSwitch2Click(TObject *Sender);
     void __fastcall ButtonRefreshPortsClick(TObject *Sender);
 //    void __fastcall ComboBoxComPortsChange(TObject *Sender);
@@ -109,10 +111,10 @@ __published:	// IDE-managed Components
     void __fastcall memoryGridKeyDown(TObject *Sender, WORD &Key, TShiftState Shift);
     void __fastcall Button2Click(TObject *Sender);
     void __fastcall Button4Click(TObject *Sender);
-    void __fastcall memoryGridMouseDown(TObject *Sender, TMouseButton Button, TShiftState Shift,
+	void __fastcall memoryGridMouseDown(TObject *Sender, TMouseButton Button, TShiftState Shift,
 		  int X, int Y);
     void __fastcall SaveMemGridClick(TObject *Sender);
-	void __fastcall ComboBox1Change(TObject *Sender);
+	void __fastcall ComboBoxDeviceChange(TObject *Sender);
 	void __fastcall SaweSeansClick(TObject *Sender);
 	void __fastcall discretKeyPress(TObject *Sender, System::WideChar &Key);
 	void __fastcall discretExit(TObject *Sender);
@@ -120,7 +122,9 @@ __published:	// IDE-managed Components
 	void __fastcall CheckBoxVoltageClick(TObject *Sender);
 	void __fastcall CheckBoxCurrentClick(TObject *Sender);
 	void __fastcall ButtonResetZoomClick(TObject *Sender);
-
+	void __fastcall Chart1Scroll(TObject *Sender);
+	void __fastcall Chart1MouseWheelDown(TObject *Sender, TShiftState Shift, TPoint &MousePos,
+          bool &Handled);
 public:
 	SessionManager sessionManager;
 	ChartManager chartManager;
@@ -130,12 +134,14 @@ public:
 
 private:	// User declarations
 
-	 float lastValidDiscret = 1.0f; // Переменная типа float для хранения
+	float lastValidDiscret = 1.0f; // Переменная типа float для хранения
 									// валидного значения дискретности обновления графика
 
 
 public:		// User declarations
-            /**
+	__fastcall TForm1(TComponent* Owner);
+
+			/**
  * Форматирует float в строку с жестким контролем лимитов.
  * @param value - само число
  * @param maxTotalDigits - сколько всего цифр (значимых) может быть в строке
@@ -155,7 +161,7 @@ inline static std::string formatValue(float value, int maxTotalDigits, int maxDe
     double maxLimit = std::pow(10, maxTotalDigits) - 1;
     if (absValue > maxLimit) {
         std::string overflow(maxTotalDigits, '9');
-        return (value < 0 ? "-" : "") + overflow;
+		return (value < 0 ? "-" : "") + overflow;
     }
 
     // 2. Считаем количество цифр в целой части для определения точности
@@ -180,7 +186,6 @@ inline static String formatValue_c(float value, int maxTotalDigits, int maxDecim
         return formatValue(value, maxTotalDigits , maxDecimals ).c_str();
 }
 
-    __fastcall TForm1(TComponent* Owner);
 
     struct TStringGridCellInfo {
     int TopLeftX;     // X-координата верхнего левого угла ячейки (0,0) относительно StringGrid

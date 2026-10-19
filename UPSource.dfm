@@ -18,69 +18,86 @@ object Form1: TForm1
   Font.Style = []
   Position = poDesigned
   Scaled = False
+  Visible = True
   OnClose = FormClose
   OnCreate = FormCreate
+  OnShow = FormShow
   DesignSize = (
     1394
     865)
   TextHeight = 32
-  object Label5: TLabel
-    Left = 930
-    Top = 672
-    Width = 62
-    Height = 28
-    Margins.Left = 5
-    Margins.Top = 5
-    Margins.Right = 5
-    Margins.Bottom = 5
-    Caption = 'Label5'
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -20
-    Font.Name = 'Segoe UI'
-    Font.Style = [fsBold]
-    ParentFont = False
-  end
   object Chart1: TChart
     Left = 8
-    Top = 569
+    Top = 572
     Width = 892
-    Height = 288
+    Height = 287
+    AllowPanning = pmHorizontal
     Border.Width = 0
     Legend.Visible = False
     MarginBottom = 0
     MarginLeft = 0
     MarginRight = 0
-    MarginTop = 0
+    MarginTop = 25
     MarginUnits = muPixels
     Title.Font.Color = clBlack
     Title.Text.Strings = (
       'TChart')
+    Title.Visible = False
     Title.VertMargin = 0
+    OnScroll = Chart1Scroll
+    OnZoom = Chart1Scroll
+    BottomAxis.Automatic = False
+    BottomAxis.AutomaticMinimum = False
     LeftAxis.Title.Caption = #1042
     LeftAxis.Title.Position = tpStart
     LeftAxis.TitleSize = 8
+    Panning.InsideBounds = True
     Shadow.Smooth = False
     Shadow.Visible = False
     View3D = False
+    Zoom.Direction = tzdHorizontal
     BevelOuter = bvNone
     TabOrder = 0
+    OnMouseWheelDown = Chart1MouseWheelDown
     DefaultCanvas = 'TGDIPlusCanvas'
     ColorPaletteIndex = 13
-    object CheckBox1: TCheckBox
-      Left = 500
-      Top = 1290
-      Width = 146
-      Height = 26
+    object Label5: TLabel
+      Left = 583
+      Top = -7
+      Width = 35
+      Height = 28
       Margins.Left = 5
       Margins.Top = 5
       Margins.Right = 5
       Margins.Bottom = 5
-      Caption = 'CheckBox1'
-      TabOrder = 0
+      Caption = #1058#1086#1082
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clMaroon
+      Font.Height = -20
+      Font.Name = 'Segoe UI'
+      Font.Style = [fsBold, fsItalic]
+      ParentFont = False
+    end
+    object Label6: TLabel
+      Left = 408
+      Top = -7
+      Width = 123
+      Height = 28
+      Margins.Left = 5
+      Margins.Top = 5
+      Margins.Right = 5
+      Margins.Bottom = 5
+      Caption = #1053#1072#1087#1088#1103#1078#1077#1085#1080#1077
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clNavy
+      Font.Height = -20
+      Font.Name = 'Segoe UI'
+      Font.Style = [fsBold, fsItalic]
+      ParentFont = False
     end
     object Series1: TLineSeries
       HoverElement = [heCurrent]
+      SeriesColor = 10485760
       Brush.BackColor = clDefault
       LinePen.Width = 3
       Pointer.InflateMargins = True
@@ -92,6 +109,7 @@ object Form1: TForm1
     end
     object Series2: TLineSeries
       HoverElement = [heCurrent]
+      SeriesColor = clMaroon
       Brush.BackColor = clDefault
       LinePen.Width = 3
       Pointer.InflateMargins = True
@@ -752,6 +770,28 @@ object Form1: TForm1
       StyleElements = [seBorder]
       ExplicitWidth = 111
     end
+    object Date: TLabel
+      Left = 12
+      Top = 90
+      Width = 215
+      Height = 54
+      Margins.Left = 5
+      Margins.Top = 5
+      Margins.Right = 5
+      Margins.Bottom = 5
+      Align = alBottom
+      Alignment = taCenter
+      Caption = 'date'
+      Color = clNavy
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clOlive
+      Font.Height = -40
+      Font.Name = 'Segoe UI'
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+      ExplicitWidth = 85
+    end
   end
   object pnlComm: TPanel
     Left = 8
@@ -843,7 +883,7 @@ object Form1: TForm1
       DesignSize = (
         244
         92)
-      object ComboBox1: TComboBox
+      object ComboBoxDevice: TComboBox
         Left = 33
         Top = 38
         Width = 193
@@ -863,7 +903,6 @@ object Form1: TForm1
         ParentFont = False
         TabOrder = 0
         Text = 'SPPS3001D'
-        OnChange = ComboBox1Change
         Items.Strings = (
           'SPPS3001D')
       end
@@ -937,15 +976,14 @@ object Form1: TForm1
     end
   end
   object CheckBoxCurrent: TCheckBox
-    Left = 552
-    Top = 560
-    Width = 78
-    Height = 26
+    Left = 565
+    Top = 571
+    Width = 20
+    Height = 20
     Margins.Left = 5
     Margins.Top = 5
     Margins.Right = 5
     Margins.Bottom = 5
-    Caption = #1058#1086#1082
     Checked = True
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clMaroon
@@ -959,15 +997,14 @@ object Form1: TForm1
     OnClick = CheckBoxCurrentClick
   end
   object CheckBoxVoltage: TCheckBox
-    Left = 395
-    Top = 560
-    Width = 150
-    Height = 26
+    Left = 386
+    Top = 571
+    Width = 20
+    Height = 20
     Margins.Left = 5
     Margins.Top = 5
     Margins.Right = 5
     Margins.Bottom = 5
-    Caption = #1053#1072#1087#1088#1103#1078#1077#1085#1080#1077
     Checked = True
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clNavy
@@ -982,7 +1019,7 @@ object Form1: TForm1
   end
   object ButtonResetZoom: TButton
     Left = 680
-    Top = 560
+    Top = 566
     Width = 140
     Height = 26
     Margins.Left = 5
@@ -1001,7 +1038,7 @@ object Form1: TForm1
   end
   object Panel6: TPanel
     Left = 80
-    Top = 559
+    Top = 563
     Width = 256
     Height = 26
     Margins.Left = 5
@@ -1019,7 +1056,7 @@ object Form1: TForm1
     Font.Style = [fsBold, fsItalic]
     ParentFont = False
     TabOrder = 10
-    ExplicitTop = 548
+    ExplicitTop = 552
     object discret: TEdit
       Left = 0
       Top = -4
